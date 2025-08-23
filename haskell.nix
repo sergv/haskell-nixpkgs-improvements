@@ -462,10 +462,12 @@ let
     };
 
   build-ghc = { base-ghc-to-override, build-pkgs, version, rev, sha256 }:
+
     let ghcSrc = pkgs.fetchgit {
           url = "https://gitlab.haskell.org/ghc/ghc.git";
           inherit rev sha256;
         };
+
         ghc' = base-ghc-to-override.override (old: old // {
           bootPkgs = build-pkgs;
           inherit ghcSrc;
@@ -481,16 +483,27 @@ let
 
     in
       disableAllHardening ((ghc'.override (old: old // {
+        # stdenv             = pkgs.llvmPackages.stdenv;
+
+        enableProfiledLibs = false;
+
+        enableShared = false;
+
+        enableRelocatedStaticLibs = true;
+
         enableNativeBignum = true;
+
         enableDocs         = false;
 
         bootPkgs = build-pkgs;
+
         hadrian  = hlib.doJailbreak (ghc'.hadrian.override (old2: old2 // {
           inherit ghcSrc;
           ghc-platform  = hutils.makeHaskellPackageSmaller ghc-platform-pkg;
           ghc-toolchain = hutils.makeHaskellPackageSmaller ghc-toolchain-pkg;
           ghcVersion    = version;
         }));
+
         inherit ghcSrc;
       })).overrideAttrs (old: {
         inherit version;
