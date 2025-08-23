@@ -487,7 +487,7 @@ let
 
         enableProfiledLibs = false;
 
-        enableShared = false;
+        enableShared = true;
 
         enableRelocatedStaticLibs = true;
 
