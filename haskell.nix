@@ -12,8 +12,8 @@ let
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
-    rev    = "a54598d57c4ad413cb4d7d207b789e20021f8e07"; # "dev";
-    sha256 = "sha256-c7uSfIhqEZmdjLJr3fE0qbg7XMvh/27aqnJfA0L5i+w="; #pkgs.lib.fakeSha256;
+    rev    = "118bd16fded858db8ad4bb74212f873915ba98a0"; # "dev";
+    sha256 = "sha256-5ecomu9mroT/rPpP+wIQvsAMBXZyKgPlQ+dAYIYeKdw="; #pkgs.lib.fakeSha256;
   };
 
   doctest-repo = pkgs.fetchFromGitHub {
@@ -119,7 +119,7 @@ let
     }));
 
   # pkgs.haskell.packages.ghc961
-  hpkgsCabal = hpkgs912.extend (new: old:
+  hpkgsCabal = hpkgs910.extend (new: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller
       (old // {
         # ghc = hutils.smaller-ghc(old.ghc);
@@ -158,16 +158,28 @@ let
             { inherit (new) Cabal-described Cabal-QuickCheck Cabal-tree-diff Cabal-tests;
             });
 
-        # hackage-security = hlib.doJailbreak
-        #   (old.callHackage "hackage-security" "0.6.2.6" {});
+        hackage-security =
+          # hlib.doJailbreak
+          #   (old.callHackage "hackage-security" "0.6.3.1" {});
+          # hlib.doJailbreak
+          (overrideCabal
+            "1"
+            "sha256-5yidF8pwnRrPubtDQC68/mwSbv+eC9omvrPGh9isJuo=" #pkgs.lib.fakeSha256
+            (old.callHackageDirect
+              {
+                pkg    = "hackage-security";
+                ver    = "0.6.3.1";
+                sha256 = "sha256-pbU35af2jqFhAtKDtkFRt4jY4m+BU5rpG1shr8qZiaQ="; #pkgs.lib.fakeSha256;
+              }
+              {}));
 
         # semaphore-compat = hlib.markUnbroken old.semaphore-compat;
 
         # # Force reinstall
         # semaphore-compat = old.callHackage "semaphore-compat" "1.0.0" {};
 
-        # Disable tests which take around 1 hour!
-        statistics = hlib.dontCheck old.statistics;
+        # # Disable tests which take around 1 hour!
+        # statistics = hlib.dontCheck old.statistics;
 
         # async = hlib.dontCheck old.async;
         # vector = hlib.dontCheck old.vector;
@@ -482,18 +494,22 @@ let
         ghc-toolchain-pkg = callPackage' ghc-toolchain { ghc-platform = ghc-platform-pkg; };
 
     in
-      disableAllHardening ((ghc'.override (old: old // {
+      disableAllHardening ((ghc'.override (old:
+        old // {
         # stdenv             = pkgs.llvmPackages.stdenv;
 
+        # Need to disable for 32 bit builds, otherwise some big files within cannot be
+        # compiled due to ld.gold exhausting memory.
         enableProfiledLibs = false;
 
         enableShared = true;
+        enableRelocatedStaticLibs = false; #true;
 
-        enableRelocatedStaticLibs = true;
+        ghcFlavour = if builtins.hasAttr "ghcFlavour" old then old.ghcFlavour + "+hie_files" else "release+split_sections+hie_files";
 
         enableNativeBignum = true;
 
-        enableDocs         = false;
+        enableDocs         = true; #false;
 
         bootPkgs = build-pkgs;
 
@@ -507,6 +523,8 @@ let
         inherit ghcSrc;
       })).overrideAttrs (old: {
         inherit version;
+        # Silence warning about overriding ‘version’ field without touching ‘src’.
+        __intentionallyOverridingVersion = true;
 
         postInstall =
           builtins.replaceStrings [ base-ghc-to-override.version ] [ "${version}" ] old.postInstall;
@@ -544,8 +562,8 @@ let
     base-ghc-to-override = pkgs.haskell.compiler.native-bignum."${latest-ghc-field}";
     build-pkgs           = hpkgs910; #hpkgsCabal;
     version              = "9.14.1";
-    rev                  = "fca42ecfd273c8db52f43084a9c5e5b50507fa90";
-    sha256               = "sha256-LmPt1+WuBtqD7ToW1VfXUA0U8fx8Ce909hNrH0QWSVM="; #pkgs.lib.fakeSha256;
+    rev                  = "85e8147dd7893db46db1868d65f4cffe4afe8454"; # "fca42ecfd273c8db52f43084a9c5e5b50507fa90";
+    sha256               = "sha256-m5rUoKx8FT5iKlhCPif9Bql8kEO+RHGTYUbrh9/aiDc="; # pkgs.lib.fakeSha256;
   };
 
   # ghc-win =
@@ -805,6 +823,8 @@ in {
   };
 
   ghcs = {
+    # -base is needed for its .doc output
+    ghc9141-base = dev-ghc-pkg;
     ghc9141 = wrap-ghc dev-ghc-version dev-ghc-short-version dev-ghc-pkg;
   };
 
