@@ -334,6 +334,7 @@ let
 
   wrap-ghc-arch = old-arch-prefix: new-arch-prefix: old-version: new-version: alias-versions: pkg:
     assert (builtins.isString old-version);
+    assert (builtins.isAttrs pkg);
     let old-prefix         = if builtins.isNull old-arch-prefix then "" else "${old-arch-prefix}-";
         new-prefix         = if builtins.isNull new-arch-prefix then "" else "${new-arch-prefix}-";
         new-version-suffix = if builtins.isNull new-version     then "" else "-${new-version}";
@@ -341,34 +342,70 @@ let
           assert (builtins.isString alias-version || builtins.isNull alias-version);
           let suffix = if builtins.isNull alias-version then "" else "-${alias-version}";
           in ''ln -s "$out/bin/${old-prefix}$x-${old-version}" "$out/bin/${new-prefix}$x${suffix}"'';
+
+        hasDocs = builtins.hasAttr "doc" pkg; # builtins.elem "doc" pkg.outputs;
+
+        wrapped =
+          pkgs.runCommand ("wrapped-ghc-" + old-version) {
+            nativeBuildInputs = [];
+          }
+            # ln -s "${pkg}/bin/$x-${version}" "$out/bin/$x-${version}"
+            # makeWrapper "${pkg}/bin/$x-${version}" "$out/bin/$x-${version}" --suffix "LD_LIBRARY_PATH" ":" "${pkgs.lib.makeLibraryPath bakedInNativeDeps}"
+            ''
+              ${if hasDocs
+                then
+                  ''
+                    ln -s ${pkg.doc} "$doc"
+                  ''
+                else ""}
+
+              mkdir -p "$out/bin"
+
+              for x in ghc ghci ghc-pkg haddock hpc runghc; do
+
+                if [[ -f "${pkg}/bin/${old-prefix}$x-${old-version}" ]]; then
+                  ln -s "${pkg}/bin/${old-prefix}$x-${old-version}" "$out/bin/${new-prefix}$x${new-version-suffix}"
+                elif [[ -f "${pkg}/bin/${old-prefix}$x-ghc-${old-version}" ]]; then
+                  ln -s "${pkg}/bin/${old-prefix}$x-ghc-${old-version}" "$out/bin/${new-prefix}$x${new-version-suffix}"
+                elif [[ -f "${pkg}/bin/${old-prefix}$x" ]]; then
+                  ln -s "${pkg}/bin/${old-prefix}$x" "$out/bin/${new-prefix}$x${new-version-suffix}"
+                else
+                  echo "Cannot find source for ‘$x’ in ‘${pkg}/bin’" >&2
+                  exit 1
+                fi
+
+                ${if builtins.isList alias-versions
+                  then builtins.concatStringsSep "\n" (builtins.map f alias-versions)
+                  else f alias-versions}
+              done
+            '';
+
+        reapply-this = x:
+          wrap-ghc-arch
+            old-arch-prefix
+            new-arch-prefix
+            old-version
+            new-version
+            alias-versions
+            x;
+
+        final = (wrapped.overrideAttrs (old: {
+          outputs =
+            if hasDocs
+            then ["out" "doc"]
+            else ["out"];
+        })) // {
+          # These cannot go under overrideAttrs since they’re not arguments to mkDerivation
+          overrideAttrs = x: reapply-this (pkg.overrideAttrs x);
+          # overrideDerivation = x: reapply-this (pkg.overrideDerivation x);
+          override = x: reapply-this (pkg.override x);
+        };
+
     in
-      pkgs.runCommand ("wrapped-ghc-" + old-version) {
-        nativeBuildInputs = [];
-      }
-        # ln -s "${pkg}/bin/$x-${version}" "$out/bin/$x-${version}"
-        # makeWrapper "${pkg}/bin/$x-${version}" "$out/bin/$x-${version}" --suffix "LD_LIBRARY_PATH" ":" "${pkgs.lib.makeLibraryPath bakedInNativeDeps}"
-        ''
-          mkdir -p "$out/bin"
-          for x in ghc ghci ghc-pkg haddock hpc runghc; do
+      final;
 
-            if [[ -f "${pkg}/bin/${old-prefix}$x-${old-version}" ]]; then
-              ln -s "${pkg}/bin/${old-prefix}$x-${old-version}" "$out/bin/${new-prefix}$x${new-version-suffix}"
-            elif [[ -f "${pkg}/bin/${old-prefix}$x-ghc-${old-version}" ]]; then
-              ln -s "${pkg}/bin/${old-prefix}$x-ghc-${old-version}" "$out/bin/${new-prefix}$x${new-version-suffix}"
-            elif [[ -f "${pkg}/bin/${old-prefix}$x" ]]; then
-              ln -s "${pkg}/bin/${old-prefix}$x" "$out/bin/${new-prefix}$x${new-version-suffix}"
-            else
-              echo "Cannot find source for ‘$x’ in ‘${pkg}/bin’" >&2
-              exit 1
-            fi
-
-            ${if builtins.isList alias-versions
-              then builtins.concatStringsSep "\n" (builtins.map f alias-versions)
-              else f alias-versions}
-          done
-        '';
-
-  wrap-ghc = version: alias-versions: pkg: wrap-ghc-arch null null version version alias-versions pkg;
+  wrap-ghc = version: alias-versions: pkg:
+    wrap-ghc-arch null null version version alias-versions pkg;
 
   wrap-ghc-filter-selected-args = filtered-args: version: alias-version: pkg:
     let wrapped-ghc = pkgs.writeShellScript ("filtering-ghc-" + version)
@@ -495,22 +532,24 @@ let
         ghc-toolchain-pkg = callPackage' ghc-toolchain { ghc-platform = ghc-platform-pkg; };
 
     in
-      disableAllHardening ((ghc'.override (old:
-        old // {
+      disableAllHardening ((ghc'.override (old: old // {
         # stdenv             = pkgs.llvmPackages.stdenv;
 
         # Need to disable for 32 bit builds, otherwise some big files within cannot be
         # compiled due to ld.gold exhausting memory.
-        enableProfiledLibs = false;
+        enableProfiledLibs = !is-32-bits;
 
         enableShared = true;
         enableRelocatedStaticLibs = false; #true;
 
-        ghcFlavour = if builtins.hasAttr "ghcFlavour" old then old.ghcFlavour + "+hie_files" else "release+split_sections+hie_files";
+        ghcFlavour =
+          if builtins.hasAttr "ghcFlavour" old
+          then old.ghcFlavour + "+hie_files"
+          else "release+split_sections+hie_files";
 
         enableNativeBignum = true;
 
-        enableDocs         = true; #false;
+        # enableDocs         = true; #false;
 
         bootPkgs = build-pkgs;
 
@@ -824,7 +863,6 @@ in {
   };
 
   ghcs = {
-    # -base is needed for its .doc output
     ghc9141-base = dev-ghc-pkg;
     ghc9141 = wrap-ghc dev-ghc-version dev-ghc-short-version dev-ghc-pkg;
   };

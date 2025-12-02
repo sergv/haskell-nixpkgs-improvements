@@ -39,6 +39,8 @@
             # overlays = [ self.overlays.default ];
           };
 
+          hutils = import ./haskell-utils.nix { inherit pkgs; };
+
           enable-ghc-unit-ids-overlay =
             new: old: {
               haskell = old.haskell // {
