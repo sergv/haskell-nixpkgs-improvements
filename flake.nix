@@ -6,9 +6,20 @@
       url = "github:nixos/nixpkgs";
     };
 
+    nixpkgs-unstable = {
+      url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    };
+
     flake-utils = {
       url = "github:numtide/flake-utils";
     };
+
+    haskellNix = {
+      url = "github:input-output-hk/haskell.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-unstable.follows = "nixpkgs-unstable";
+    };
+
   };
 
   # # inputs.nixpkgs.url = "github:nixos/nixpkgs";
@@ -19,7 +30,7 @@
   # inputs.hackage-security.url = "github:haskell/hackage-security/hackage-security/v0.6.2.6";
   # inputs.hackage-security.flake = false;
 
-  outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
+  outputs = inputs@{ self, nixpkgs, nixpkgs-unstable, flake-utils, haskellNix, ... }:
     #flake-utils.lib.eachDefaultSystem
     flake-utils.lib.eachSystem ["x86_64-linux" "i686-linux"] (system:
 
@@ -28,9 +39,46 @@
             # overlays = [ self.overlays.default ];
           };
 
+          enable-ghc-unit-ids-overlay =
+            new: old: {
+              haskell = old.haskell // {
+                compiler =
+                  builtins.mapAttrs (_: hutils.enable-unit-ids-for-newer-ghc) old.haskell.compiler // {
+                    native-bignum = builtins.mapAttrs (_: hutils.enable-unit-ids-for-newer-ghc) old.haskell.compiler.native-bignum;
+                  };
+              };
+            };
+
+          # Remove dependency on mcfgthreads mingw library. If we keep it
+          # then cross-compiling cabal will have a hard time building network
+          # packge because it will try to link executables to see whether all
+          # libraries are available but without properly passed mcfgthreads
+          # the linking will fail.
+          use-win32-thread-model-overlay = final: old: {
+            threadsCross = {
+              model = "win32";
+              package = null;
+            };
+          };
+
+          pkgs-cross-win = import nixpkgs-unstable {
+            inherit system;
+            # inherit (arch) localSystem;
+            inherit (haskellNix) config;
+            overlays = [
+              haskellNix.overlay
+              enable-ghc-unit-ids-overlay
+              # improve-fetchgit-overlay
+              use-win32-thread-model-overlay
+            ];
+          };
+
       in {
         # (builtins.getFlake "path:/path/to/directory").packages.x86_64-linux.default
-        packages = import ./haskell.nix { inherit pkgs; };
+        packages = import ./haskell.nix {
+          inherit pkgs pkgs-cross-win hutils;
+          is-32-bits = system == "i686-linux";
+        };
 
         overlays = {
         };
