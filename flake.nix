@@ -68,50 +68,53 @@
       , ...
       }:
     let systems = ["x86_64-linux" "i686-linux"];
+        lib = nixpkgs.lib;
         forEachSystem = lib.genAttrs systems;
 
-        lib = nixpkgs.lib;
-        hlib = nixpkgs.haskell.lib;
-        hutils = import ./haskell-utils.nix { inherit hlib lib; };
+        mkHUtils = pkgs: import ./haskell-utils.nix { hlib = pkgs.haskell.lib; lib = pkgs.lib; };
 
         # No point to have this as on overlay - let internal ghcs within /nix/store not have
         # unit ids - we won’t be exposing them to the user so there’s no harm.
         #
         # However, lets build internal tools with the same ghc that’s being exposed to the user.
-        enable-ghc-unit-ids-overlay = final: prev: {
-          haskell = prev.haskell // {
-            compiler =
-              builtins.mapAttrs (_: hutils.enable-unit-ids-for-newer-ghc) prev.haskell.compiler // {
-                native-bignum = builtins.mapAttrs (_: hutils.enable-unit-ids-for-newer-ghc) prev.haskell.compiler.native-bignum;
-              };
-          };
-        };
-
-        smaller-haskell-overlay = final: prev: {
-          haskellPackages = hutils.fixedExtend (hutils.smaller-hpkgs prev.haskell.packages.native-bignum.ghc967) (_: prev2: {
-            # Make everything smaller at the core by altering arguments to mkDerivation.
-            # This is hacky but is needed because Isabelle’s naproche dependency cannot
-            # be coerced to not do e.g. profiling by standard Haskell infrastructure
-            # because it’s not a Haskell package so hlib.disableLibraryProfiling
-            # doesn’t work.
-            mkDerivation = x: prev2.mkDerivation (x // {
-              doHaddock                 = false;
-              enableLibraryProfiling    = false;
-              enableExecutableProfiling = false;
-              # enableSharedExecutables   = false;
-              # enableSharedLibraries     = false;
-            });
-          });
-
-          haskell = prev.haskell // {
-            packages = builtins.mapAttrs (_: hutils.smaller-hpkgs-no-ghc) prev.haskell.packages // {
-              native-bignum = builtins.mapAttrs (_: hutils.smaller-hpkgs-no-ghc) prev.haskell.packages.native-bignum;
+        enable-ghc-unit-ids-overlay = final: prev:
+          let hutils = mkHUtils final;
+          in {
+            haskell = prev.haskell // {
+              compiler =
+                builtins.mapAttrs (_: hutils.enable-unit-ids-for-newer-ghc) prev.haskell.compiler // {
+                  native-bignum = builtins.mapAttrs (_: hutils.enable-unit-ids-for-newer-ghc) prev.haskell.compiler.native-bignum;
+                };
             };
           };
-        };
+
+        smaller-haskell-overlay = final: prev:
+          let hutils = mkHUtils final;
+          in {
+            haskellPackages = hutils.fixedExtend (hutils.smaller-hpkgs prev.haskell.packages.native-bignum.ghc967) (_: prev2: {
+              # Make everything smaller at the core by altering arguments to mkDerivation.
+              # This is hacky but is needed because Isabelle’s naproche dependency cannot
+              # be coerced to not do e.g. profiling by standard Haskell infrastructure
+              # because it’s not a Haskell package so hlib.disableLibraryProfiling
+              # doesn’t work.
+              mkDerivation = x: prev2.mkDerivation (x // {
+                doHaddock                 = false;
+                enableLibraryProfiling    = false;
+                enableExecutableProfiling = false;
+                # enableSharedExecutables   = false;
+                # enableSharedLibraries     = false;
+              });
+            });
+
+            haskell = prev.haskell // {
+              packages = builtins.mapAttrs (_: hutils.smaller-hpkgs-no-ghc) prev.haskell.packages // {
+                native-bignum = builtins.mapAttrs (_: hutils.smaller-hpkgs-no-ghc) prev.haskell.packages.native-bignum;
+              };
+            };
+          };
 
         # Tests of these packages fail, presumable because of -march.
-        disable-problematic-haskell-crypto-pkgs-checks = prev: prev2: {
+        disable-problematic-haskell-crypto-pkgs-checks = hlib: prev: prev2: {
           cryptonite              = hlib.dontCheck prev2.cryptonite;
           crypton                 = hlib.dontCheck prev2.crypton;
           # x509-validation         = hlib.dontCheck prev2.x509-validation;
@@ -119,47 +122,52 @@
           tls                     = hlib.dontCheck prev2.tls;
         };
 
-        temporarily-disable-problematic-haskell-pkgs-checks = prev: prev2: {
+        temporarily-disable-problematic-haskell-pkgs-checks = hlib: prev: prev2: {
           # Fails on GHC 9.6.4, should work on others
           unicode-data = hlib.dontCheck prev2.unicode-data;
         };
 
-        haskell-disable-checks-overlay = _: prev: {
+        haskell-disable-checks-overlay = final: prev:
+          let hutils = mkHUtils final;
+              hlib   = final.haskell.lib;
+          in {
 
-          haskellPackages = hutils.fixedExtend prev.haskellPackages
-            (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks prev prev2 // disable-problematic-haskell-crypto-pkgs-checks prev prev2);
+            haskellPackages = hutils.fixedExtend prev.haskellPackages
+              (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks hlib prev prev2 // disable-problematic-haskell-crypto-pkgs-checks hlib prev prev2);
 
-          haskell = prev.haskell // {
-            packages = prev.haskell.packages // {
-              # Doesn’t work: overwrites changes made by ‘smaller-haskell-overlay’.
-              # ghc962 = prev.haskell.packages.ghc962.override {
-              #   overrides = _: prev2: {
-              #     x509-validation = hlib.dontCheck prev2.x509-validation;
-              #   };
-              # };
+            haskell = prev.haskell // {
+              packages = prev.haskell.packages // {
+                # Doesn’t work: overwrites changes made by ‘smaller-haskell-overlay’.
+                # ghc962 = prev.haskell.packages.ghc962.override {
+                #   overrides = _: prev2: {
+                #     x509-validation = hlib.dontCheck prev2.x509-validation;
+                #   };
+                # };
 
-              # ghc94 = hutils.fixedExtend prev.haskell.packages.ghc94 (_: prev2: {
-              #   x509-validation = hlib.dontCheck prev2.x509-validation;
-              # });
+                # ghc94 = hutils.fixedExtend prev.haskell.packages.ghc94 (_: prev2: {
+                #   x509-validation = hlib.dontCheck prev2.x509-validation;
+                # });
 
-              # ghc947 = hutils.fixedExtend prev.haskell.packages.ghc947 (_: prev2: {
-              #   x509-validation = hlib.dontCheck prev2.x509-validation;
-              # });
+                # ghc947 = hutils.fixedExtend prev.haskell.packages.ghc947 (_: prev2: {
+                #   x509-validation = hlib.dontCheck prev2.x509-validation;
+                # });
 
-              # ghc964 = hutils.fixedExtend prev.haskell.packages.ghc964 (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks prev prev2 // disable-problematic-haskell-crypto-pkgs-checks prev prev2);
-              ghc965 = hutils.fixedExtend prev.haskell.packages.ghc965 (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks prev prev2 // disable-problematic-haskell-crypto-pkgs-checks prev prev2);
-              ghc966 = hutils.fixedExtend prev.haskell.packages.ghc966 (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks prev prev2 // disable-problematic-haskell-crypto-pkgs-checks prev prev2);
-              ghc967 = hutils.fixedExtend prev.haskell.packages.ghc967 (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks prev prev2 // disable-problematic-haskell-crypto-pkgs-checks prev prev2);
+                # ghc964 = hutils.fixedExtend prev.haskell.packages.ghc964 (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks hlib prev prev2 // disable-problematic-haskell-crypto-pkgs-checks prev prev2);
+                ghc965 = hutils.fixedExtend prev.haskell.packages.ghc965 (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks hlib prev prev2 // disable-problematic-haskell-crypto-pkgs-checks prev prev2);
+                ghc966 = hutils.fixedExtend prev.haskell.packages.ghc966 (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks hlib prev prev2 // disable-problematic-haskell-crypto-pkgs-checks prev prev2);
+                ghc967 = hutils.fixedExtend prev.haskell.packages.ghc967 (_: prev2: temporarily-disable-problematic-haskell-pkgs-checks hlib prev prev2 // disable-problematic-haskell-crypto-pkgs-checks prev prev2);
+              };
             };
           };
-        };
 
-        fixes-overlay = final: prev: {
-          # To avoid infinite recursion
-          cabal2nix-unwrapped = hlib.justStaticExecutables
-            (final.haskell.packages.native-bignum.ghc967.generateOptparseApplicativeCompletions ["cabal2nix"]
-              final.haskell.packages.native-bignum.ghc967.cabal2nix);
-        };
+        fixes-overlay = final: prev:
+          let hlib = final.haskell.lib;
+          in {
+            # To avoid infinite recursion
+            cabal2nix-unwrapped = hlib.justStaticExecutables
+              (final.haskell.packages.native-bignum.ghc967.generateOptparseApplicativeCompletions ["cabal2nix"]
+                final.haskell.packages.native-bignum.ghc967.cabal2nix);
+          };
 
         # Remove dependency on mcfgthreads mingw library. If we keep it
         # then cross-compiling cabal will have a hard time building network
@@ -220,11 +228,13 @@
               };
           in
             import ./haskell.nix {
-              inherit lib hlib hutils;
               inherit pinned-pkgs;
-              pkgs = vanilla-pkgs;
+              hutils         = mkHUtils vanilla-pkgs;
+              hlib           = vanilla-pkgs.haskell.lib;
+              lib            = vanilla-pkgs.lib;
+              pkgs           = vanilla-pkgs;
               pkgs-cross-win = cross-win-pkgs;
-              is-32-bits = system == "i686-linux";
+              is-32-bits     = system == "i686-linux";
             };
       };
 
