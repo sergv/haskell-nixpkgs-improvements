@@ -886,7 +886,7 @@ in {
 
       ghc9122-pie = wrap-ghc-rename latest-ghc-version ["${latest-ghc-short-version}-pie" "pie"] (relocatable-static-libs-ghc latest-ghc-pkg);
 
-      ghc9141 = wrap-ghc dev-ghc-version dev-ghc-short-version dev-ghc-pkg;
+      ghc9141     = wrap-ghc dev-ghc-version dev-ghc-short-version dev-ghc-pkg;
 
       # callPackage = newScope {
       #   haskellLib = haskellLibUncomposable.compose;
@@ -915,8 +915,12 @@ in {
 
     };
 
-    cross-win = ghc-win;
-  };
+  } //
+  (if pkgs-cross-win == null
+   then {}
+   else {
+     cross-win = ghc-win;
+   });
 
   lib = {
     inherit build-ghc;
