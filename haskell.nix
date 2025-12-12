@@ -1,15 +1,14 @@
 { pkgs
 , pkgs-cross-win
+, pinned-pkgs
+
+, lib
+, hlib
 , hutils
 , is-32-bits
 }:
 
 let
-  t             = pkgs.lib.trivial;
-  hlib          = pkgs.haskell.lib;
-
-  # hpkgs = pkgs.haskell.packages.ghc924;
-
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
@@ -253,7 +252,7 @@ let
       # this can kill a few hours of your life like it’s nothing.
       #
       # Nix is great when it works, but when it doesn’t it’s a miserable
-      # piece of FUCK.
+      # piece of <yeah, that thing> (this was an enormous letdown).
       os-string            = null;
 
       vector               = hlib.dontCheck old.vector;
@@ -616,7 +615,7 @@ let
 
       wine = pkgs-cross-win.winePackages.minimal;
 
-      ghc-win = (win-pkgs.pkgsBuildHost.haskell-nix.compiler."${latest-ghc-field}".override (_: {
+      ghc-win-pkg = (win-pkgs.pkgsBuildHost.haskell-nix.compiler."${latest-ghc-field}".override (_: {
         enableNativeBignum = true;
       })).overrideAttrs(old: {
         # haskell.nix ghc builder does not expose hadrian argumens so we have to hack
@@ -747,14 +746,14 @@ let
                 # "-L${win-pkgs.windows.mcfgthreads}/lib" \
                 text          =
                   ''
-              ${pkg}/bin/${ghc-exe} \
-                -fexternal-interpreter \
-                -pgmi ${wine-iserv-wrapper-script}/bin/iserv-wrapper \
-                -optc-Wno-incompatible-pointer-types \
-                -L${win-pkgs.windows.mingw_w64_pthreads}/lib \
-                -L${win-pkgs.windows.mingw_w64_pthreads}/bin \
-                "''${@}"
-            '';
+                    ${pkg}/bin/${ghc-exe} \
+                      -fexternal-interpreter \
+                      -pgmi ${wine-iserv-wrapper-script}/bin/iserv-wrapper \
+                      -optc-Wno-incompatible-pointer-types \
+                      -L${win-pkgs.windows.mingw_w64_pthreads}/lib \
+                      -L${win-pkgs.windows.mingw_w64_pthreads}/bin \
+                      "''${@}"
+                  '';
               };
         in symlink-exe-to wrapped wrapped.name new-names;
 
@@ -765,8 +764,8 @@ let
                 runtimeInputs = [pkg];
                 text          =
                   ''
-              ${pkg}/bin/${exe} "''${@}"
-            '';
+                    ${pkg}/bin/${exe} "''${@}"
+                  '';
               };
         in symlink-exe-to wrapped wrapped.name new-names;
 
@@ -777,8 +776,8 @@ let
                 runtimeInputs = [pkg];
                 text          =
                   ''
-              ${pkg}/bin/${exe} --cross-compile --via-asm "''${@}"
-            '';
+                    ${pkg}/bin/${exe} --cross-compile --via-asm "''${@}"
+                  '';
               };
         in symlink-exe-to wrapped wrapped.name new-names;
 
@@ -786,9 +785,9 @@ let
       ghc-pkg-win-exe-name = "ghc-pkg-win";
       hsc2hs-win-exe-name  = "hsc2hs-win";
 
-      ghc-win-wrapped     = wrap-win-ghc ghc-win "x86_64-w64-mingw32-ghc" ["ghc-${latest-ghc-short-version}-win" ghc-win-exe-name];
-      ghc-pkg-win-wrapped = wrap-win-ghc-pkg ghc-win "x86_64-w64-mingw32-ghc-pkg" ["ghc-pkg-${latest-ghc-short-version}-win" ghc-pkg-win-exe-name];
-      hsc2hs-win-wrapped  = wrap-win-hsc2hs ghc-win "x86_64-w64-mingw32-hsc2hs" ["hsc2hs-${latest-ghc-short-version}-win" hsc2hs-win-exe-name];
+      ghc-win-wrapped     = wrap-win-ghc ghc-win-pkg "x86_64-w64-mingw32-ghc" ["ghc-${latest-ghc-short-version}-win" ghc-win-exe-name];
+      ghc-pkg-win-wrapped = wrap-win-ghc-pkg ghc-win-pkg "x86_64-w64-mingw32-ghc-pkg" ["ghc-pkg-${latest-ghc-short-version}-win" ghc-pkg-win-exe-name];
+      hsc2hs-win-wrapped  = wrap-win-hsc2hs ghc-win-pkg "x86_64-w64-mingw32-hsc2hs" ["hsc2hs-${latest-ghc-short-version}-win" hsc2hs-win-exe-name];
 
       cabal-win-wrapped =
         let test-wrapper =
@@ -840,17 +839,18 @@ let
               # For ‘x86_64-w64-mingw32-ld’
               win-pkgs.buildPackages.binutils
             ];
-            text          = ''
-              cmd="$1"
-              shift
-              cabal "$cmd" \
-                --with-compiler ${ghc-win-exe-name} \
-                --with-hc-pkg ${ghc-pkg-win-exe-name} \
-                --with-hsc2hs ${hsc2hs-win-exe-name} \
-                --with-ld "x86_64-w64-mingw32-ld" \
-                --test-wrapper "${test-wrapper}/bin/cabal-win-test-wrapper" \
-                "''${@}"
-            '';
+            text          =
+              ''
+                cmd="$1"
+                shift
+                cabal "$cmd" \
+                  --with-compiler ${ghc-win-exe-name} \
+                  --with-hc-pkg ${ghc-pkg-win-exe-name} \
+                  --with-hsc2hs ${hsc2hs-win-exe-name} \
+                  --with-ld "x86_64-w64-mingw32-ld" \
+                  --test-wrapper "${test-wrapper}/bin/cabal-win-test-wrapper" \
+                  "''${@}"
+              '';
           };
     in {
       inherit ghc-win-wrapped ghc-pkg-win-wrapped hsc2hs-win-wrapped wine-run-haskell cabal-win-wrapped;
@@ -858,101 +858,84 @@ let
 
 in {
 
+  ghc = {
+    host = {
+      ghc7103     = wrap-ghc-filter-all               "7.10.3" "7.10"        pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc7103.ghc;
+      ghc802      = wrap-ghc-filter-hide-source-paths "8.0.2"  "8.0"         pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc802.ghc;
+
+      ghc822      = wrap-ghc                          "8.2.2"  "8.2"         pinned-pkgs.nixpkgs-19-09.haskell.packages.ghc822.ghc;
+      ghc844      = wrap-ghc                          "8.4.4"  "8.4"         pinned-pkgs.nixpkgs-20-03.haskell.packages.ghc844.ghc;
+
+      ghc865      = wrap-ghc                          "8.6.5"  "8.6"         pinned-pkgs.nixpkgs-20-09.haskell.packages.ghc865.ghc;
+
+      ghc884      = wrap-ghc                          "8.8.4"  "8.8"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc884.ghc;
+
+      ghc8107     = wrap-ghc                          "8.10.7" "8.10"        pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc8107.ghc;
+      # ghc902    = wrap-ghc                          "9.0.2"  "9.0"         (hutils.smaller-ghc pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc902.ghc);
+      ghc928      = wrap-ghc                          "9.2.8"  "9.2"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc928.ghc;
+      ghc948      = wrap-ghc                          "9.4.8"  "9.4"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc948.ghc;
+
+      ghc967      = wrap-ghc                          "9.6.7"  "9.6"         pkgs.haskell.compiler.native-bignum.ghc967;
+      ghc984      = wrap-ghc                          "9.8.4"  "9.8"         pkgs.haskell.compiler.native-bignum.ghc984;
+
+      ghc9102     = wrap-ghc                          "9.10.2" "9.10"        pkgs.haskell.compiler.native-bignum.ghc9102;
+
+      # ghc9121     = wrap-ghc                          "9.12.2" "9.12"        pkgs.haskell.compiler.native-bignum.ghc9122;
+
+      ghc9122     = wrap-ghc                          latest-ghc-version [latest-ghc-short-version null] latest-ghc-pkg;
+
+      ghc9122-pie = wrap-ghc-rename latest-ghc-version ["${latest-ghc-short-version}-pie" "pie"] (relocatable-static-libs-ghc latest-ghc-pkg);
+
+      ghc9141 = wrap-ghc dev-ghc-version dev-ghc-short-version dev-ghc-pkg;
+
+      # callPackage = newScope {
+      #   haskellLib = haskellLibUncomposable.compose;
+      #   overrides = pkgs.haskell.packageOverrides;
+      # };
+
+      # ghc961  = wrap-ghc "9.6.0.20230111" (import ./ghc-9.6.1-alpha1.nix {
+      #   inherit (pkgs)
+      #     lib
+      #     stdenv
+      #     fetchurl
+      #     perl
+      #     gcc
+      #     ncurses5
+      #     ncurses6
+      #     gmp
+      #     libiconv
+      #     numactl
+      #     libffi
+      #     llvmPackages
+      #     coreutils
+      #     targetPackages;
+      #
+      #   # llvmPackages = pkgs.llvmPackages_13;
+      # });
+
+    };
+
+    cross-win = ghc-win;
+  };
+
   lib = {
     inherit build-ghc;
   };
 
-  ghcs = {
-    ghc9141-base = dev-ghc-pkg;
-    ghc9141 = wrap-ghc dev-ghc-version dev-ghc-short-version dev-ghc-pkg;
+  tools = {
+    inherit cabal-install;
+
+    alex               = hlib.justStaticExecutables hpkgs912.alex;
+    happy              = hlib.justStaticExecutables hpkgs912.happy;
+    doctest            = allowGhcReference (hlib.justStaticExecutables hpkgsDoctest.doctest);
+    eventlog2html      = hlib.justStaticExecutables hpkgsEventlog2html.eventlog2html;
+    fast-tags          = hlib.justStaticExecutables hpkgsFastTags.fast-tags;
+    ghc-events-analyze = hlib.justStaticExecutables hpkgsGhcEvensAnalyze.ghc-events-analyze;
+    hp2pretty          = hlib.justStaticExecutables hpkgs96.hp2pretty;
+    pretty-show        = hlib.justStaticExecutables hpkgs96.pretty-show;
+    profiterole        = hlib.justStaticExecutables hpkgsProfiterole.profiterole;
+    # hspec-discover     = hlib.justStaticExecutables hpkgs96.hspec-discover;
+    # threadscope        = threadscopePkgs.threadscope;
   };
 
 }
-# ghc-win // {
-#
-#   ghc7103     = wrap-ghc-filter-all               "7.10.3" "7.10"        pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc7103.ghc;
-#   ghc802      = wrap-ghc-filter-hide-source-paths "8.0.2"  "8.0"         pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc802.ghc;
-#
-#   ghc822      = wrap-ghc                          "8.2.2"  "8.2"         pinned-pkgs.nixpkgs-19-09.haskell.packages.ghc822.ghc;
-#   ghc844      = wrap-ghc                          "8.4.4"  "8.4"         pinned-pkgs.nixpkgs-20-03.haskell.packages.ghc844.ghc;
-#
-#   ghc865      = wrap-ghc                          "8.6.5"  "8.6"         pinned-pkgs.nixpkgs-20-09.haskell.packages.ghc865.ghc;
-#
-#   ghc884      = wrap-ghc                          "8.8.4"  "8.8"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc884.ghc;
-#
-#   ghc8107     = wrap-ghc                          "8.10.7" "8.10"        pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc8107.ghc;
-#   # ghc902    = wrap-ghc                          "9.0.2"  "9.0"         (hutils.smaller-ghc pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc902.ghc);
-#   ghc928      = wrap-ghc                          "9.2.8"  "9.2"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc928.ghc;
-#   ghc948      = wrap-ghc                          "9.4.8"  "9.4"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc948.ghc;
-#
-#   ghc967      = wrap-ghc                          "9.6.7"  "9.6"         pkgs.haskell.compiler.native-bignum.ghc967;
-#   ghc984      = wrap-ghc                          "9.8.4"  "9.8"         pkgs.haskell.compiler.native-bignum.ghc984;
-#
-#   ghc9102     = wrap-ghc                          "9.10.2" "9.10"        pkgs.haskell.compiler.native-bignum.ghc9102;
-#
-#   # ghc9121     = wrap-ghc                          "9.12.2" "9.12"        pkgs.haskell.compiler.native-bignum.ghc9122;
-#
-#   ghc9122     = wrap-ghc                          latest-ghc-version [latest-ghc-short-version null] latest-ghc-pkg;
-#
-#   ghc9122-pie = wrap-ghc-rename latest-ghc-version ["${latest-ghc-short-version}-pie" "pie"] (relocatable-static-libs-ghc latest-ghc-pkg);
-#
-#   ghc9141     = wrap-ghc                          dev-ghc-version dev-ghc-short-version dev-ghc-pkg;
-#
-#   # callPackage = newScope {
-#   #   haskellLib = haskellLibUncomposable.compose;
-#   #   overrides = pkgs.haskell.packageOverrides;
-#   # };
-#
-#   # ghc961  = wrap-ghc "9.6.0.20230111" (import ./ghc-9.6.1-alpha1.nix {
-#   #   inherit (pkgs)
-#   #     lib
-#   #     stdenv
-#   #     fetchurl
-#   #     perl
-#   #     gcc
-#   #     ncurses5
-#   #     ncurses6
-#   #     gmp
-#   #     libiconv
-#   #     numactl
-#   #     libffi
-#   #     llvmPackages
-#   #     coreutils
-#   #     targetPackages;
-#   #
-#   #   # llvmPackages = pkgs.llvmPackages_13;
-#   # });
-#
-#   inherit cabal-install;
-#
-#   alex               = hlib.justStaticExecutables hpkgs912.alex;
-#   happy              = hlib.justStaticExecutables hpkgs912.happy;
-#   doctest            = allowGhcReference (hlib.justStaticExecutables hpkgsDoctest.doctest);
-#   eventlog2html      = hlib.justStaticExecutables hpkgsEventlog2html.eventlog2html;
-#   fast-tags          = hlib.justStaticExecutables hpkgsFastTags.fast-tags;
-#   ghc-events-analyze = hlib.justStaticExecutables hpkgsGhcEvensAnalyze.ghc-events-analyze;
-#   hp2pretty          = hlib.justStaticExecutables hpkgs96.hp2pretty;
-#   pretty-show        = hlib.justStaticExecutables hpkgs96.pretty-show;
-#   profiterole        = hlib.justStaticExecutables hpkgsProfiterole.profiterole;
-#   # hspec-discover     = hlib.justStaticExecutables hpkgs96.hspec-discover;
-#   # threadscope        = threadscopePkgs.threadscope;
-#   universal-ctags    = pkgs.universal-ctags;
-#
-#   gcc  = pkgs.gcc;
-#   # Conflicts with gcc regarding ld.gold
-#   # clang = pkgs.clang_19;
-#   llvm = pkgs.llvm_19;
-#   # bintools = pkgs.llvmPackages_19.bintools;
-#   # lld   = pkgs.lld_19;
-#   lld  = filter-bin "llvmPackages_19.bintools" [{ source = "ld"; dest = "lld"; aliases = ["ld.lld"]; }] pkgs.llvmPackages_19.bintools;
-#
-#   # for ‘clang-format’
-#   clang-tools = pkgs.clang-tools;
-#   cmake       = pkgs.cmake;
-#   diffutils   = pkgs.diffutils;
-#   gdb         = pkgs.gdb;
-#   gnumake     = pkgs.gnumake;
-#   libtree     = pkgs.libtree;
-#   patchelf    = pkgs.patchelf;
-#   pkg-config  = pkgs.pkg-config;
-# }

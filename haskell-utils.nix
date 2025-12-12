@@ -1,8 +1,7 @@
-{ pkgs
+{ hlib
+, lib
 }:
-let hlib = pkgs.haskell.lib;
-
-    # Disable profiling and haddock
+let # Disable profiling and haddock
     makeHaskellPackageSmaller = x:
       hlib.dontHaddock
        (hlib.disableLibraryProfiling
@@ -29,7 +28,7 @@ let hlib = pkgs.haskell.lib;
     # smaller-ghc = ghc-pkg:
     #   if ghc-version-ge ghc-pkg "9.6"
     #   then
-    #     let args = pkgs.lib.functionArgs ghc-pkg.override;
+    #     let args = lib.functionArgs ghc-pkg.override;
     #         is-non-bin-distribution = args ? enableNativeBignum || args ? enableDocs;
     #     in
     #       if is-non-bin-distribution
@@ -51,7 +50,7 @@ let hlib = pkgs.haskell.lib;
 
           # haskell.nix ghc builder does not expase hadrian argumens so we have to hack
           # hadrian shell invocation here instead of using hadrianFlags/hadrianArgs
-          buildPhase = builtins.replaceStrings [ " --flavour=" ] [ " --hash-unit-ids --flavour=" ] old.buildPhase;
+          buildPhase = builtins.replaceStrings [" --flavour="] [" --hash-unit-ids --flavour="] old.buildPhase;
         })
       else
         ghc-pkg;
@@ -60,10 +59,12 @@ let hlib = pkgs.haskell.lib;
     # thus preventing further calls to .override.
     #
     # f should be of the form
-    # (self: super: { ...  })
+    # (self: super: { ... })
+    # aka
+    # (final: prev: { ... })
     fixedExtend = target: f:
       target.override (old: {
-        overrides = pkgs.lib.composeExtensions (old.overrides or (_: _: {})) f;
+        overrides = lib.composeExtensions (old.overrides or (_: _: {})) f;
       });
 
 in {
