@@ -92,7 +92,7 @@ let
       # syb = old.callHackage "syb" "0.7.2.3" {};
     }));
 
-  hpkgsGhcEvensAnalyze = hpkgs96.extend (_: old:
+  hpkgsGhcEventsAnalyze = hpkgs96.extend (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       ghc-events-analyze = hlib.doJailbreak (old.callCabal2nix "ghc-events-analyze" ghc-events-analyze-repo {});
       SVGFonts           = old.callHackage "SVGFonts" "1.7.0.1" {};
@@ -934,7 +934,7 @@ in {
     doctest            = allowGhcReference (hlib.justStaticExecutables hpkgsDoctest.doctest);
     eventlog2html      = hlib.justStaticExecutables hpkgsEventlog2html.eventlog2html;
     fast-tags          = hlib.justStaticExecutables hpkgsFastTags.fast-tags;
-    ghc-events-analyze = hlib.justStaticExecutables hpkgsGhcEvensAnalyze.ghc-events-analyze;
+    ghc-events-analyze = hlib.justStaticExecutables hpkgsGhcEventsAnalyze.ghc-events-analyze;
     hp2pretty          = hlib.justStaticExecutables hpkgs96.hp2pretty;
     pretty-show        = hlib.justStaticExecutables hpkgs96.pretty-show;
     profiterole        = hlib.justStaticExecutables hpkgsProfiterole.profiterole;
