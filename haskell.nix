@@ -579,7 +579,7 @@ let
           '';
       }));
 
-  cabal-install = wrap-cabal (hlib.justStaticExecutables hpkgsCabal.cabal-install);
+  cabal = wrap-cabal (hlib.justStaticExecutables hpkgsCabal.cabal-install);
 
   latest-ghc-version       = "9.12.2";
   latest-ghc-field         = "ghc9122";
@@ -832,7 +832,7 @@ let
           pkgs-cross-win.pkgsBuildBuild.writeShellApplication {
             name          = "cabal-win";
             runtimeInputs = [
-              cabal-install
+              cabal
               ghc-win-wrapped
               ghc-pkg-win-wrapped
               hsc2hs-win-wrapped
@@ -927,7 +927,7 @@ in {
   };
 
   tools = {
-    inherit cabal-install;
+    inherit cabal;
 
     alex               = hlib.justStaticExecutables hpkgs912.alex;
     happy              = hlib.justStaticExecutables hpkgs912.happy;
