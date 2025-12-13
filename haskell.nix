@@ -12,8 +12,8 @@ let
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
-    rev    = "118bd16fded858db8ad4bb74212f873915ba98a0"; # "dev";
-    sha256 = "sha256-5ecomu9mroT/rPpP+wIQvsAMBXZyKgPlQ+dAYIYeKdw="; #pkgs.lib.fakeSha256;
+    rev    = "85bec3ef8090e0a6b4c249f4f5ecbc49fb85840e"; #"dev";
+    sha256 = "sha256-n24XrmSWxIPjpRnhnWSPYq7u1srf/JqANciH+7MSezI="; #pkgs.lib.fakeSha256;
   };
 
   doctest-repo = pkgs.fetchFromGitHub {
@@ -119,7 +119,7 @@ let
     }));
 
   # pkgs.haskell.packages.ghc961
-  hpkgsCabal = hpkgs910.extend (new: old:
+  hpkgsCabal = hpkgs912.extend (new: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller
       (old // {
         # ghc = hutils.smaller-ghc(old.ghc);
