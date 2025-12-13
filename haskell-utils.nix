@@ -25,21 +25,21 @@ let # Disable profiling and haddock
             builtins.compareVersions to-check target-version >= 0;
       in (ghc-pkg ? version) && versionGE ghc-pkg.version target-version;
 
-    # smaller-ghc = ghc-pkg:
-    #   if ghc-version-ge ghc-pkg "9.6"
-    #   then
-    #     let args = lib.functionArgs ghc-pkg.override;
-    #         is-non-bin-distribution = args ? enableNativeBignum || args ? enableDocs;
-    #     in
-    #       if is-non-bin-distribution
-    #       then ghc-pkg.override (_: {
-    #         enableNativeBignum = true;
-    #         enableDocs         = false;
-    #       })
-    #       else ghc-pkg
-    #   else
-    #     # Don’t bother with older ghcs.
-    #     ghc-pkg;
+    smaller-ghc = ghc-pkg:
+      if ghc-version-ge ghc-pkg "9.6"
+      then
+        let args = lib.functionArgs ghc-pkg.override;
+            is-non-bin-distribution = args ? enableNativeBignum || args ? enableDocs;
+        in
+          if is-non-bin-distribution
+          then ghc-pkg.override (_: {
+            enableNativeBignum = true;
+            enableDocs         = false;
+          })
+          else ghc-pkg
+      else
+        # Don’t bother with older ghcs.
+        ghc-pkg;
 
     enable-unit-ids-for-newer-ghc = ghc-pkg:
       if ghc-version-ge ghc-pkg "9.8"
@@ -81,8 +81,8 @@ in {
 
   smaller-hpkgs = hpkgs:
     # builtins.trace (builtins.attrNames hpkgs)
-      (fixedExtend hpkgs (_: old:
-        builtins.mapAttrs makeHaskellPackageAttribSmaller (old // {
-          ghc = smaller-ghc old.ghc;
-        })));
+    (fixedExtend hpkgs (_: old:
+      builtins.mapAttrs makeHaskellPackageAttribSmaller (old // {
+        ghc = smaller-ghc old.ghc;
+      })));
 }
