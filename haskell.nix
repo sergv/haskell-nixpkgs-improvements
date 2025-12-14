@@ -110,10 +110,9 @@ let
       statistics = hlib.dontCheck old.statistics;
     }));
 
-  hpkgsProfiterole = hpkgs96.extend (_: old:
+  hpkgsProfiterole = hpkgs912.extend (final: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
-      profiterole = old.profiterole;
-      ghc-prof    = hlib.doJailbreak old.ghc-prof;
+      ghc-prof = hlib.dontCheck old.ghc-prof;
     }));
 
   # pkgs.haskell.packages.ghc961
@@ -933,8 +932,8 @@ in {
     eventlog2html      = hlib.justStaticExecutables hpkgsEventlog2html.eventlog2html;
     fast-tags          = hlib.justStaticExecutables hpkgsFastTags.fast-tags;
     ghc-events-analyze = hlib.justStaticExecutables hpkgsGhcEventsAnalyze.ghc-events-analyze;
-    hp2pretty          = hlib.justStaticExecutables hpkgs96.hp2pretty;
-    pretty-show        = hlib.justStaticExecutables hpkgs96.pretty-show;
+    hp2pretty          = hlib.justStaticExecutables hpkgs912.hp2pretty;
+    pretty-show        = hlib.justStaticExecutables hpkgs912.pretty-show;
     profiterole        = hlib.justStaticExecutables hpkgsProfiterole.profiterole;
     # hspec-discover     = hlib.justStaticExecutables hpkgs96.hspec-discover;
     # threadscope        = threadscopePkgs.threadscope;
