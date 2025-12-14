@@ -23,13 +23,6 @@ let
     sha256 = "sha256-liYoSonwDDWt40Oa7SpZn3SqThTDp5bw6e2Duk+sf0s="; #pkgs.lib.fakeSha256;
   };
 
-  ghc-events-analyze-repo = pkgs.fetchFromGitHub {
-    owner  = "sergv";
-    repo   = "ghc-events-analyze";
-    rev    = "73fd96f6b833e3f9ae5fc7a2ab85a98e74af8fb9";
-    sha256 = "sha256-TW3e2xbUOgvqjk1cr2y2DOc+iuQpVfSJEkP9AgT0xXk="; #pkgs.lib.fakeSha256;
-  };
-
   fast-tags-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "fast-tags";
@@ -94,12 +87,17 @@ let
 
   hpkgsGhcEventsAnalyze = hpkgs96.extend (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
-      ghc-events-analyze = hlib.doJailbreak (old.callCabal2nix "ghc-events-analyze" ghc-events-analyze-repo {});
-      SVGFonts           = old.callHackage "SVGFonts" "1.8.1" {};
-      ghc-events         = old.callHackage "ghc-events" "0.20.0.0" {};
-
-      # Disable tests which take around 1 hour!
-      statistics = hlib.dontCheck old.statistics;
+      # ghc-events-analyze = old.callHackage "ghc-events-analyze" "0.2.9" {};
+      ghc-events-analyze =
+        hlib.doJailbreak
+          (old.callHackageDirect
+            {
+              pkg    = "ghc-events-analyze";
+              ver    = "0.2.9";
+              sha256 = "sha256-HkHq3lmCsqZW21+n4u7G5OED0ao7CX//jW7qgpjn6a4="; #pkgs.lib.fakeSha256;
+            }
+            {});
+      brick = hlib.doJailbreak old.brick;
     }));
 
   hpkgsEventlog2html = hpkgs96.extend (_: old:
