@@ -95,8 +95,8 @@ let
   hpkgsGhcEventsAnalyze = hpkgs96.extend (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       ghc-events-analyze = hlib.doJailbreak (old.callCabal2nix "ghc-events-analyze" ghc-events-analyze-repo {});
-      SVGFonts           = old.callHackage "SVGFonts" "1.7.0.1" {};
-      ghc-events         = old.callHackage "ghc-events" "0.19.0.1" {};
+      SVGFonts           = old.callHackage "SVGFonts" "1.8.1" {};
+      ghc-events         = old.callHackage "ghc-events" "0.20.0.0" {};
 
       # Disable tests which take around 1 hour!
       statistics = hlib.dontCheck old.statistics;
