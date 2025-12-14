@@ -100,12 +100,12 @@ let
       brick = hlib.doJailbreak old.brick;
     }));
 
-  hpkgsEventlog2html = hpkgs96.extend (_: old:
+  hpkgsEventlog2html = hpkgs912.extend (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       eventlog2html = hlib.doJailbreak (hlib.unmarkBroken old.eventlog2html);
       vector-binary-instances = hlib.doJailbreak old.vector-binary-instances;
 
-      ghc-events = old.callHackage "ghc-events" "0.19.0.1" {};
+      ghc-events = old.callHackage "ghc-events" "0.20.0.0" {};
       # Disable tests which take around 1 hour!
       statistics = hlib.dontCheck old.statistics;
     }));
