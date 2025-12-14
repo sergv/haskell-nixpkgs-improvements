@@ -42,7 +42,10 @@ let # Disable profiling and haddock
         ghc-pkg;
 
     enable-unit-ids-for-newer-ghc = ghc-pkg:
-      if ghc-version-ge ghc-pkg "9.8"
+      if ghc-version-ge ghc-pkg "9.8" &&
+         # Use presence of ‘buildPhase’ as a marker for whether we’re really building
+         # from source or downloading a binary. The binary doesn’t have the ‘buildPhase’.
+         builtins.hasAttr "buildPhase" ghc-pkg
       then
         ghc-pkg.overrideAttrs (old: {
           hadrianFlags = (old.hadrianFlags or []) ++ ["--hash-unit-ids"];
