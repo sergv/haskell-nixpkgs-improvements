@@ -179,10 +179,16 @@
           let hlib = final.haskell.lib;
           in {
             # To avoid infinite recursion
-            cabal2nix-unwrapped = hlib.justStaticExecutables
-              (final.haskell.packages.native-bignum.ghc967.generateOptparseApplicativeCompletions ["cabal2nix"]
-                final.haskell.packages.native-bignum.ghc967.cabal2nix);
+            cabal2nix-unwrapped = final.cabal2nix-unwrapped-orig;
           };
+
+        preserve-orig-cabal2nix-overlay = final: prev:
+          {
+            # To avoid infinite recursion
+            # cabal2nix-unwrapped-orig = prev.cabal2nix-unwrapped; #final.haskell.packages.native-bignum.ghc967.cabal2nix;
+            cabal2nix-unwrapped-orig = prev.haskell.packages.native-bignum.ghc967.cabal2nix;
+          }
+          ;
 
         # Remove dependency on mcfgthreads mingw library. If we keep it
         # then cross-compiling cabal will have a hard time building network
@@ -201,6 +207,7 @@
           haskell-disable-checks-overlay
           smaller-haskell-overlay
           enable-ghc-unit-ids-overlay
+          preserve-orig-cabal2nix-overlay
         ];
     in {
 

@@ -592,14 +592,22 @@ let
   #   sha256               = "sha256-CsUKRGjJ68QFiLPqQkqhOVMnUbTm1BEz01hnNeZqctc="; #pkgs.lib.fakeSha256;
   # };
 
+  ghc914-pkg = build-ghc {
+    base-ghc-to-override = pkgs.haskell.compiler.native-bignum."${latest-ghc-field}";
+    build-pkgs           = hpkgs910; #hpkgsCabal;
+    version              = "9.14.1";
+    rev                  = "902339d332fb4ce2b3c87dcac1ee6495d41ad886";
+    sha256               = "sha256-wsClYVCoinEem20jHTFjiTOMgU8MsEaZ1RAgAMsK078="; #pkgs.lib.fakeSha256;
+  };
+
   dev-ghc-version = "9.14.1";
   dev-ghc-short-version = "9.14";
   dev-ghc-pkg = build-ghc {
     base-ghc-to-override = pkgs.haskell.compiler.native-bignum."${latest-ghc-field}";
     build-pkgs           = hpkgs910; #hpkgsCabal;
     version              = "9.14.1";
-    rev                  = "85e8147dd7893db46db1868d65f4cffe4afe8454"; # "fca42ecfd273c8db52f43084a9c5e5b50507fa90";
-    sha256               = "sha256-m5rUoKx8FT5iKlhCPif9Bql8kEO+RHGTYUbrh9/aiDc="; # pkgs.lib.fakeSha256;
+    rev                  = "902339d332fb4ce2b3c87dcac1ee6495d41ad886";
+    sha256               = pkgs.lib.fakeSha256;
   };
 
   ghc-win =
@@ -883,7 +891,7 @@ in {
 
       ghc9122-pie = wrap-ghc-rename latest-ghc-version ["${latest-ghc-short-version}-pie" "pie"] (relocatable-static-libs-ghc latest-ghc-pkg);
 
-      ghc9141     = wrap-ghc dev-ghc-version dev-ghc-short-version dev-ghc-pkg;
+      ghc9141     = wrap-ghc "9.14.1" "9.14" ghc914-pkg;
 
       # callPackage = newScope {
       #   haskellLib = haskellLibUncomposable.compose;
