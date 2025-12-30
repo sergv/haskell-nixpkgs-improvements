@@ -66,7 +66,7 @@ let
 
   allowGhcReference = x: hlib.overrideCabal x (drv: { disallowGhcReference = false; });
 
-  hpkgsDoctest = hpkgs912.extend (_: old:
+  hpkgsDoctest = hutils.fixedExtend hpkgs912 (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       doctest =
         hlib.dontCheck ((old.callCabal2nix "doctest" doctest-repo {}).overrideAttrs (oldAttrs: oldAttrs // {
@@ -85,7 +85,7 @@ let
       # syb = old.callHackage "syb" "0.7.2.3" {};
     }));
 
-  hpkgsGhcEventsAnalyze = hpkgs96.extend (_: old:
+  hpkgsGhcEventsAnalyze = hutils.fixedExtend hpkgs96 (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       # ghc-events-analyze = old.callHackage "ghc-events-analyze" "0.2.9" {};
       ghc-events-analyze =
@@ -100,7 +100,7 @@ let
       brick = hlib.doJailbreak old.brick;
     }));
 
-  hpkgsEventlog2html = hpkgs912.extend (_: old:
+  hpkgsEventlog2html = hutils.fixedExtend hpkgs912 (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       eventlog2html = hlib.doJailbreak (hlib.unmarkBroken old.eventlog2html);
       vector-binary-instances = hlib.doJailbreak old.vector-binary-instances;
@@ -110,13 +110,13 @@ let
       statistics = hlib.dontCheck old.statistics;
     }));
 
-  hpkgsProfiterole = hpkgs912.extend (final: old:
+  hpkgsProfiterole = hutils.fixedExtend hpkgs912 (final: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       ghc-prof = hlib.dontCheck old.ghc-prof;
     }));
 
   # pkgs.haskell.packages.ghc961
-  hpkgsCabal = hpkgs912.extend (new: old:
+  hpkgsCabal = hutils.fixedExtend hpkgs912 (new: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller
       (old // {
         # ghc = hutils.smaller-ghc(old.ghc);
@@ -235,7 +235,7 @@ let
         #       {}));
       }));
 
-  hpkgsFastTags = hpkgs912.extend (_: old:
+  hpkgsFastTags = hutils.fixedExtend hpkgs912 (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       fast-tags = hlib.dontCheck (old.callCabal2nix "fast-tags" fast-tags-repo {});
 
@@ -279,7 +279,7 @@ let
 
   # pkgs.haskell.packages.ghc961
   # args.pkgs.haskellPackages
-  threadscopePkgs = pkgs.haskell.packages.ghc928.extend (_: old:
+  threadscopePkgs = hutils.fixedExtend pkgs.haskell.packages.ghc928 (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       threadscope = hlib.doJailbreak old.threadscope;
     }));
