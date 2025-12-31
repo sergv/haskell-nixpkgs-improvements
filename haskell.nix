@@ -863,6 +863,25 @@ let
 
 in {
 
+  haskell-package-sets = {
+    host = {
+      ghc914 =
+        hutils.fixedExtend pkgs.haskell.packages.ghcHEAD (new: old: {
+          ghc                  = ghc914-pkg;
+          buildHaskellPackages =
+            hutils.fixedExtend pkgs.haskell.packages.native-bignum.ghc912
+              # hutils.fixedExtend old.buildHaskellPackages
+              (_new2: _old2: {
+                ghc             = ghc914-pkg;
+                # Override build tools used by Haskell mkDerivation to
+                # avoid references to ghcHEAD compiler.
+                hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
+                jailbreak-cabal = new.jailbreak-cabal; #pkgs.haskell.packages.native-bignum.ghc912.jailbreak-cabal;
+              });
+        });
+    };
+  };
+
   ghc = {
     host = {
       ghc7103     = wrap-ghc-filter-all               "7.10.3" "7.10"        pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc7103.ghc;

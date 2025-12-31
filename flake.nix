@@ -295,5 +295,16 @@
             derived.tools
       );
 
+      haskell-package-sets = forEachSystem (system:
+        let pkgs = import nixpkgs {
+              inherit system;
+              config = self.config.host;
+              overlays = [ self.overlays.host ];
+            };
+            derived = self.lib.derive-haskell-tools system pkgs null;
+        in
+          derived.haskell-package-sets
+      );
+
     };
 }
