@@ -41,6 +41,18 @@ let # Disable profiling and haddock
         # Don’t bother with older ghcs.
         ghc-pkg;
 
+    addElemToAttrUniq = x: attr: composite: default:
+      if builtins.hasAttr attr composite
+      then
+        let value = builtins.getAttr attr composite;
+        in
+          if builtins.isList value &&
+             !(builtins.elem "--hash-unit-ids" value)
+          then value ++ [x]
+          else value
+      else
+        default;
+
     enable-unit-ids-for-newer-ghc = ghc-pkg:
       if ghc-version-ge ghc-pkg "9.8" &&
          # Use presence of ‘buildPhase’ as a marker for whether we’re really building
@@ -48,8 +60,8 @@ let # Disable profiling and haddock
          builtins.hasAttr "buildPhase" ghc-pkg
       then
         ghc-pkg.overrideAttrs (old: {
-          hadrianFlags = (old.hadrianFlags or []) ++ ["--hash-unit-ids"];
-          hadrianArgs  = (old.hadrianArgs or [])  ++ ["--hash-unit-ids"];
+          hadrianFlags = addElemToAttrUniq "--hash-unit-ids" "hadrianFlags" old [];
+          hadrianArgs  = addElemToAttrUniq "--hash-unit-ids" "hadrianArgs"  old [];
 
           # haskell.nix ghc builder does not expase hadrian argumens so we have to hack
           # hadrian shell invocation here instead of using hadrianFlags/hadrianArgs
