@@ -891,7 +891,7 @@ in {
 
       ghc9122-pie = wrap-ghc-rename latest-ghc-version ["${latest-ghc-short-version}-pie" "pie"] (relocatable-static-libs-ghc latest-ghc-pkg);
 
-      ghc9141     = wrap-ghc "9.14.1" "9.14" ghc914-pkg;
+      ghc9141     = wrap-ghc                          "9.14.1" "9.14"        ghc914-pkg;
 
       # callPackage = newScope {
       #   haskellLib = haskellLibUncomposable.compose;

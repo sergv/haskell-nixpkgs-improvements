@@ -290,7 +290,9 @@
             };
             derived = self.lib.derive-haskell-tools system pkgs null;
         in
-          pkgs.lib.attrsets.unionOfDisjoint derived.ghc.host derived.tools
+          pkgs.lib.attrsets.unionOfDisjoint
+            derived.ghc.host
+            derived.tools
       );
 
     };
