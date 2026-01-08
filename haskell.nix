@@ -866,13 +866,48 @@ in {
   haskell-package-sets = {
     host = {
       ghc914 =
-        hutils.fixedExtend pkgs.haskell.packages.ghcHEAD (new: old: {
-          ghc                  = ghc914-pkg;
+        let hpkgs =
+              hutils.fixedExtend pkgs.haskell.packages.ghcHEAD (new: old: {
+                ghc          = ghc914-pkg;
+                mkDerivation = drv:
+                  if drv.pname == "jailbreak-cabal"
+                  then old.mkDerivation drv
+                  else
+                    old.mkDerivation (drv // {
+                      jailbreak = true;
+                      # doHaddock = false;
+                      doCheck = false;
+                      # doBenchmark = false;
+                      # doHoogle = true;
+                      # doHaddock = true;
+                      # enableLibraryProfiling = false;
+                      # enableExecutableProfiling = false;
+                    });
+
+                integer-logarithms =
+                  (old.callHackageDirect {
+                    pkg    = "integer-logarithms";
+                    ver    = "1.0.5";
+                    sha256 = "sha256-fVcwxYyw7Ant0YfS2QrYb+lk6GhCSG1hYbar4TwBwnM="; #pkgs.lib.fakeSha256;
+                  }
+                    {});
+
+                algebraic-graphs =
+                  old.callCabal2nix
+                    "alga"
+                    (pkgs.fetchFromGitHub {
+                      owner  = "snowleopard";
+                      repo   = "alga";
+                      rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
+                      sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
+                    })
+                    {};
+              });
+        in hutils.fixedExtend hpkgs (new: old: {
           buildHaskellPackages =
-            hutils.fixedExtend pkgs.haskell.packages.native-bignum.ghc912
+            hutils.fixedExtend hpkgs
               # hutils.fixedExtend old.buildHaskellPackages
               (_new2: _old2: {
-                ghc             = ghc914-pkg;
                 # Override build tools used by Haskell mkDerivation to
                 # avoid references to ghcHEAD compiler.
                 hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
