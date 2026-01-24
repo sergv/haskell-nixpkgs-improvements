@@ -863,59 +863,63 @@ let
 
 in {
 
-  haskell-package-sets = {
-    host = {
-      ghc914 =
-        let hpkgs =
-              hutils.fixedExtend pkgs.haskell.packages.ghcHEAD (new: old: {
-                ghc          = ghc914-pkg;
-                mkDerivation = drv:
-                  if drv.pname == "jailbreak-cabal"
-                  then old.mkDerivation drv
-                  else
-                    old.mkDerivation (drv // {
-                      jailbreak = true;
-                      # doHaddock = false;
-                      doCheck = false;
-                      # doBenchmark = false;
-                      # doHoogle = true;
-                      # doHaddock = true;
-                      # enableLibraryProfiling = false;
-                      # enableExecutableProfiling = false;
-                    });
+  haskell-package-sets =
+    let mkGhc914Pkgs = ghc-pkg:
+          let hpkgs =
+                hutils.fixedExtend pkgs.haskell.packages.ghcHEAD (new: old: {
+                  ghc          = ghc-pkg;
+                  mkDerivation = drv:
+                    if drv.pname == "jailbreak-cabal"
+                    then old.mkDerivation drv
+                    else
+                      old.mkDerivation (drv // {
+                        jailbreak = true;
+                        # doHaddock = false;
+                        doCheck = false;
+                        # doBenchmark = false;
+                        # doHoogle = true;
+                        # doHaddock = true;
+                        # enableLibraryProfiling = false;
+                        # enableExecutableProfiling = false;
+                      });
 
-                integer-logarithms =
-                  (old.callHackageDirect {
-                    pkg    = "integer-logarithms";
-                    ver    = "1.0.5";
-                    sha256 = "sha256-fVcwxYyw7Ant0YfS2QrYb+lk6GhCSG1hYbar4TwBwnM="; #pkgs.lib.fakeSha256;
-                  }
-                    {});
+                  integer-logarithms =
+                    (old.callHackageDirect {
+                      pkg    = "integer-logarithms";
+                      ver    = "1.0.5";
+                      sha256 = "sha256-fVcwxYyw7Ant0YfS2QrYb+lk6GhCSG1hYbar4TwBwnM="; #pkgs.lib.fakeSha256;
+                    }
+                      {});
 
-                algebraic-graphs =
-                  old.callCabal2nix
-                    "alga"
-                    (pkgs.fetchFromGitHub {
-                      owner  = "snowleopard";
-                      repo   = "alga";
-                      rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
-                      sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
-                    })
-                    {};
-              });
-        in hutils.fixedExtend hpkgs (new: old: {
-          buildHaskellPackages =
-            hutils.fixedExtend hpkgs
-              # hutils.fixedExtend old.buildHaskellPackages
-              (_new2: _old2: {
-                # Override build tools used by Haskell mkDerivation to
-                # avoid references to ghcHEAD compiler.
-                hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
-                jailbreak-cabal = new.jailbreak-cabal; #pkgs.haskell.packages.native-bignum.ghc912.jailbreak-cabal;
-              });
-        });
+                  algebraic-graphs =
+                    old.callCabal2nix
+                      "alga"
+                      (pkgs.fetchFromGitHub {
+                        owner  = "snowleopard";
+                        repo   = "alga";
+                        rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
+                        sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
+                      })
+                      {};
+                });
+          in hutils.fixedExtend hpkgs (new: old: {
+            buildHaskellPackages =
+              hutils.fixedExtend hpkgs
+                # hutils.fixedExtend old.buildHaskellPackages
+                (_new2: _old2: {
+                  # Override build tools used by Haskell mkDerivation to
+                  # avoid references to ghcHEAD compiler.
+                  hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
+                  jailbreak-cabal = new.jailbreak-cabal; #pkgs.haskell.packages.native-bignum.ghc912.jailbreak-cabal;
+                });
+          });
+
+    in {
+      host = {
+        ghc914     = mkGhc914Pkgs ghc914-pkg;
+        ghc914-pie = mkGhc914Pkgs (relocatable-static-libs-ghc ghc914-pkg);
+      };
     };
-  };
 
   ghc = {
     host = {
@@ -943,7 +947,7 @@ in {
 
       ghc9122     = wrap-ghc                          latest-ghc-version [latest-ghc-short-version null] latest-ghc-pkg;
 
-      ghc9122-pie = wrap-ghc-rename latest-ghc-version ["${latest-ghc-short-version}-pie" "pie"] (relocatable-static-libs-ghc latest-ghc-pkg);
+      # ghc9122-pie = wrap-ghc-rename latest-ghc-version ["${latest-ghc-short-version}-pie" "pie"] (relocatable-static-libs-ghc latest-ghc-pkg);
 
       ghc9141     = wrap-ghc                          "9.14.1" "9.14"        ghc914-pkg;
 
