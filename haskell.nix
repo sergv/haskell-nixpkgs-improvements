@@ -945,11 +945,12 @@ in {
 
       # ghc9121     = wrap-ghc                          "9.12.2" "9.12"        pkgs.haskell.compiler.native-bignum.ghc9122;
 
-      ghc9122     = wrap-ghc                          latest-ghc-version [latest-ghc-short-version null] latest-ghc-pkg;
+      ghc9122     = wrap-ghc                          latest-ghc-version latest-ghc-short-version latest-ghc-pkg;
+
+      ghc9141     = wrap-ghc                          "9.14.1" ["9.14" null] ghc914-pkg;
 
       # ghc9122-pie = wrap-ghc-rename latest-ghc-version ["${latest-ghc-short-version}-pie" "pie"] (relocatable-static-libs-ghc latest-ghc-pkg);
 
-      ghc9141     = wrap-ghc                          "9.14.1" "9.14"        ghc914-pkg;
 
       # callPackage = newScope {
       #   haskellLib = haskellLibUncomposable.compose;
