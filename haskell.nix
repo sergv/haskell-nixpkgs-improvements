@@ -12,8 +12,8 @@ let
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
-    rev    = "0034604edef496178ec08070d8267283e4082710"; #"dev";
-    sha256 = "sha256-gkOmTTf83+cMIKleLQbFBQIibOpAKldR0emmgyGmXno="; #pkgs.lib.fakeSha256;
+    rev    = "0363e61a1153e9017736254572a70888f0e6408c"; #"dev";
+    sha256 = "sha256-WN/vuPqSr4WqdfZWifmiBW61xJgxVP/PaU9leLhgzjM="; #pkgs.lib.fakeSha256;
   };
 
   doctest-repo = pkgs.fetchFromGitHub {
@@ -179,8 +179,10 @@ let
         # statistics = hlib.dontCheck old.statistics;
 
         # async = hlib.dontCheck old.async;
-        # vector = hlib.dontCheck old.vector;
-        #
+
+        # Requires doctest which requires ghc-paths which doesn’t support Cabal 3.17 we have.
+        vector = hlib.dontCheck old.vector;
+
         # # file-io = hlib.dontCheck old.file-io;
         #
         # uuid-types = hlib.doJailbreak old.uuid-types;
