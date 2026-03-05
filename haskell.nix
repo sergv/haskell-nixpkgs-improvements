@@ -925,34 +925,31 @@ in {
 
   ghc = {
     host = {
-      ghc7103     = wrap-ghc-filter-all               "7.10.3" "7.10"        pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc7103.ghc;
-      ghc802      = wrap-ghc-filter-hide-source-paths "8.0.2"  "8.0"         pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc802.ghc;
+      ghc710     = wrap-ghc-filter-all               "7.10.3" "7.10"        pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc7103.ghc;
+      ghc80      = wrap-ghc-filter-hide-source-paths "8.0.2"  "8.0"         pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc802.ghc;
 
-      ghc822      = wrap-ghc                          "8.2.2"  "8.2"         pinned-pkgs.nixpkgs-19-09.haskell.packages.ghc822.ghc;
-      ghc844      = wrap-ghc                          "8.4.4"  "8.4"         pinned-pkgs.nixpkgs-20-03.haskell.packages.ghc844.ghc;
+      ghc82      = wrap-ghc                          "8.2.2"  "8.2"         pinned-pkgs.nixpkgs-19-09.haskell.packages.ghc822.ghc;
+      ghc84      = wrap-ghc                          "8.4.4"  "8.4"         pinned-pkgs.nixpkgs-20-03.haskell.packages.ghc844.ghc;
 
-      ghc865      = wrap-ghc                          "8.6.5"  "8.6"         pinned-pkgs.nixpkgs-20-09.haskell.packages.ghc865.ghc;
+      ghc86      = wrap-ghc                          "8.6.5"  "8.6"         pinned-pkgs.nixpkgs-20-09.haskell.packages.ghc865.ghc;
 
-      ghc884      = wrap-ghc                          "8.8.4"  "8.8"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc884.ghc;
+      ghc88      = wrap-ghc                          "8.8.4"  "8.8"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc884.ghc;
 
-      ghc8107     = wrap-ghc                          "8.10.7" "8.10"        pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc8107.ghc;
+      ghc810     = wrap-ghc                          "8.10.7" "8.10"        pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc8107.ghc;
       # ghc902    = wrap-ghc                          "9.0.2"  "9.0"         (hutils.smaller-ghc pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc902.ghc);
-      ghc928      = wrap-ghc                          "9.2.8"  "9.2"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc928.ghc;
-      ghc948      = wrap-ghc                          "9.4.8"  "9.4"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc948.ghc;
+      ghc92      = wrap-ghc                          "9.2.8"  "9.2"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc928.ghc;
+      ghc94      = wrap-ghc                          "9.4.8"  "9.4"         pinned-pkgs.nixpkgs-23-11.haskell.packages.ghc948.ghc;
 
-      ghc967      = wrap-ghc                          "9.6.7"  "9.6"         pkgs.haskell.compiler.native-bignum.ghc967;
-      ghc984      = wrap-ghc                          "9.8.4"  "9.8"         pkgs.haskell.compiler.native-bignum.ghc984;
+      ghc96      = wrap-ghc                          "9.6.7"  "9.6"         pkgs.haskell.compiler.native-bignum.ghc967;
+      ghc98      = wrap-ghc                          "9.8.4"  "9.8"         pkgs.haskell.compiler.native-bignum.ghc984;
 
-      ghc9102     = wrap-ghc                          "9.10.2" "9.10"        pkgs.haskell.compiler.native-bignum.ghc9102;
+      ghc910     = wrap-ghc                          "9.10.2" "9.10"        pkgs.haskell.compiler.native-bignum.ghc9102;
 
       # ghc9121     = wrap-ghc                          "9.12.2" "9.12"        pkgs.haskell.compiler.native-bignum.ghc9122;
 
-      ghc9122     = wrap-ghc                          latest-ghc-version latest-ghc-short-version latest-ghc-pkg;
+      ghc912     = wrap-ghc                          latest-ghc-version latest-ghc-short-version latest-ghc-pkg;
 
-      ghc9141     = wrap-ghc                          "9.14.1" ["9.14" null] ghc914-pkg;
-
-      # ghc9122-pie = wrap-ghc-rename latest-ghc-version ["${latest-ghc-short-version}-pie" "pie"] (relocatable-static-libs-ghc latest-ghc-pkg);
-
+      ghc914     = wrap-ghc                          "9.14.1" ["9.14" null] ghc914-pkg;
 
       # callPackage = newScope {
       #   haskellLib = haskellLibUncomposable.compose;
