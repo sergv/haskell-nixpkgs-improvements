@@ -541,9 +541,16 @@ let
         enableRelocatedStaticLibs = false; #true;
 
         ghcFlavour =
-          if builtins.hasAttr "ghcFlavour" old
-          then old.ghcFlavour + "+hie_files"
-          else "release+split_sections+hie_files";
+          let hie_files =
+                if hutils.version-ge version "9.14"
+                then "+hie_files"
+                else "";
+              base =
+                if builtins.hasAttr "ghcFlavour" old
+                then old.ghcFlavour
+                else "release+split_sections";
+          in
+            base + hie_files;
 
         enableNativeBignum = true;
 
