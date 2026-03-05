@@ -20,13 +20,14 @@ let # Disable profiling and haddock
        # builtins.trace { inherit name; type = builtins.typeOf x; }
        (makeHaskellPackageSmaller x);
 
-    ghc-version-ge = ghc-pkg: target-version:
-      let versionGE = to-check: target-version:
-            builtins.compareVersions to-check target-version >= 0;
-      in (ghc-pkg ? version) && versionGE ghc-pkg.version target-version;
+    version-ge = to-check: target-version:
+      builtins.compareVersions to-check target-version >= 0;
+
+    ghc-pkg-version-ge = ghc-pkg: target-version:
+      (ghc-pkg ? version) && version-ge ghc-pkg.version target-version;
 
     smaller-ghc = ghc-pkg:
-      if ghc-version-ge ghc-pkg "9.6"
+      if ghc-pkg-version-ge ghc-pkg "9.6"
       then
         let args = lib.functionArgs ghc-pkg.override;
             is-non-bin-distribution = args ? enableNativeBignum || args ? enableDocs;
@@ -54,7 +55,7 @@ let # Disable profiling and haddock
         default;
 
     enable-unit-ids-for-newer-ghc = ghc-pkg:
-      if ghc-version-ge ghc-pkg "9.8" &&
+      if ghc-pkg-version-ge ghc-pkg "9.8" &&
          # Use presence of ‘buildPhase’ as a marker for whether we’re really building
          # from source or downloading a binary. The binary doesn’t have the ‘buildPhase’.
          builtins.hasAttr "buildPhase" ghc-pkg
@@ -83,7 +84,7 @@ let # Disable profiling and haddock
       });
 
 in {
-  inherit makeHaskellPackageSmaller makeHaskellPackageAttribSmaller fixedExtend ghc-version-ge;
+  inherit makeHaskellPackageSmaller makeHaskellPackageAttribSmaller fixedExtend ghc-pkg-version-ge version-ge;
 
   inherit enable-unit-ids-for-newer-ghc;
 
