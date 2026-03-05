@@ -603,6 +603,14 @@ let
   #   sha256               = "sha256-CsUKRGjJ68QFiLPqQkqhOVMnUbTm1BEz01hnNeZqctc="; #pkgs.lib.fakeSha256;
   # };
 
+  ghc912-pkg = build-ghc {
+    base-ghc-to-override = latest-ghc-pkg;
+    build-pkgs           = ghc-build-pkgs;
+    version              = "9.12.3";
+    rev                  = "65370007e2d9f1976fbcfbb514917fb111117148";
+    sha256               = "sha256-3f0K/+76FmeF5KWbEJXMtEcWNtUQGy+ttsLk2nmqY6Q="; #pkgs.lib.fakeSha256;
+  };
+
   ghc914-pkg = build-ghc {
     base-ghc-to-override = latest-ghc-pkg;
     build-pkgs           = ghc-build-pkgs;
@@ -956,7 +964,7 @@ in {
 
       # ghc9121     = wrap-ghc                          "9.12.2" "9.12"        pkgs.haskell.compiler.native-bignum.ghc9122;
 
-      ghc912     = wrap-ghc                          "9.12.2" "9.12"        latest-ghc-pkg;
+      ghc912     = wrap-ghc                          "9.12.3" "9.12"        ghc912-pkg;
 
       ghc914     = wrap-ghc                          "9.14.1" ["9.14" null] ghc914-pkg;
 
