@@ -587,23 +587,25 @@ let
 
   cabal = wrap-cabal (hlib.justStaticExecutables hpkgsCabal.cabal-install);
 
-  latest-ghc-version       = "9.12.2";
   latest-ghc-field         = "ghc9122";
   latest-ghc-short-version = "9.12";
 
+  # ghc-build-pkgs = pkgs.haskell.packages.native-bignum.ghc9101;
+  # ghc-build-pkgs = hpkgsCabal;
+  ghc-build-pkgs = hpkgs910;
   latest-ghc-pkg = pkgs.haskell.compiler.native-bignum."${latest-ghc-field}";
 
   # latest-ghc-pkg = build-ghc {
-  #   base-ghc-to-override = pkgs.haskell.compiler.native-bignum."${latest-ghc-field}";
-  #   build-pkgs           = hpkgsCabal; #pkgs.haskell.packages.native-bignum.ghc9101;
+  #   base-ghc-to-override = latest-ghc-pkg;
+  #   build-pkgs           = ghc-build-pkgs;
   #   version              = "9.12.2";
   #   rev                  = "383be28ffdddf65b57b7b111bfc89808b4229ebc";
   #   sha256               = "sha256-CsUKRGjJ68QFiLPqQkqhOVMnUbTm1BEz01hnNeZqctc="; #pkgs.lib.fakeSha256;
   # };
 
   ghc914-pkg = build-ghc {
-    base-ghc-to-override = pkgs.haskell.compiler.native-bignum."${latest-ghc-field}";
-    build-pkgs           = hpkgs910; #hpkgsCabal;
+    base-ghc-to-override = latest-ghc-pkg;
+    build-pkgs           = ghc-build-pkgs;
     version              = "9.14.1";
     rev                  = "902339d332fb4ce2b3c87dcac1ee6495d41ad886";
     sha256               = "sha256-wsClYVCoinEem20jHTFjiTOMgU8MsEaZ1RAgAMsK078="; #pkgs.lib.fakeSha256;
@@ -612,8 +614,8 @@ let
   dev-ghc-version = "9.14.1";
   dev-ghc-short-version = "9.14";
   dev-ghc-pkg = build-ghc {
-    base-ghc-to-override = pkgs.haskell.compiler.native-bignum."${latest-ghc-field}";
-    build-pkgs           = hpkgs910; #hpkgsCabal;
+    base-ghc-to-override = latest-ghc-pkg;
+    build-pkgs           = ghc-build-pkgs;
     version              = "9.14.1";
     rev                  = "902339d332fb4ce2b3c87dcac1ee6495d41ad886";
     sha256               = pkgs.lib.fakeSha256;
@@ -954,7 +956,7 @@ in {
 
       # ghc9121     = wrap-ghc                          "9.12.2" "9.12"        pkgs.haskell.compiler.native-bignum.ghc9122;
 
-      ghc912     = wrap-ghc                          latest-ghc-version latest-ghc-short-version latest-ghc-pkg;
+      ghc912     = wrap-ghc                          "9.12.2" "9.12"        latest-ghc-pkg;
 
       ghc914     = wrap-ghc                          "9.14.1" ["9.14" null] ghc914-pkg;
 
