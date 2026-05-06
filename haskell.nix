@@ -880,8 +880,6 @@ let
       inherit ghc-win-wrapped ghc-pkg-win-wrapped hsc2hs-win-wrapped wine-run-haskell cabal-win-wrapped;
     };
 
-in {
-
   haskell-package-sets =
     let mkGhc914Pkgs = ghc-pkg:
           let hpkgs =
@@ -934,14 +932,20 @@ in {
           });
 
     in {
-      host = {
+      host = rec {
+        default    = ghc914;
         ghc914     = mkGhc914Pkgs ghc914-pkg;
         ghc914-pie = mkGhc914Pkgs (relocatable-static-libs-ghc ghc914-pkg);
       };
     };
 
+
+in {
+
+  inherit haskell-package-sets;
+
   ghc = {
-    host = {
+    host = rec {
       ghc710     = wrap-ghc-filter-all               "7.10.3" "7.10"        pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc7103.ghc;
       ghc80      = wrap-ghc-filter-hide-source-paths "8.0.2"  "8.0"         pinned-pkgs.nixpkgs-18-09.haskell.packages.ghc802.ghc;
 
@@ -967,6 +971,8 @@ in {
       ghc912     = wrap-ghc                          "9.12.3" "9.12"        ghc912-pkg;
 
       ghc914     = wrap-ghc                          "9.14.1" ["9.14" null] ghc914-pkg;
+
+      default    = ghc914;
 
       # callPackage = newScope {
       #   haskellLib = haskellLibUncomposable.compose;
@@ -1018,6 +1024,7 @@ in {
     hp2pretty          = hlib.justStaticExecutables hpkgs912.hp2pretty;
     pretty-show        = hlib.justStaticExecutables hpkgs912.pretty-show;
     profiterole        = hlib.justStaticExecutables hpkgsProfiterole.profiterole;
+    weeder             = hlib.justStaticExecutables haskell-package-sets.host.default.weeder;
     # hspec-discover     = hlib.justStaticExecutables hpkgs96.hspec-discover;
     # threadscope        = threadscopePkgs.threadscope;
   };
