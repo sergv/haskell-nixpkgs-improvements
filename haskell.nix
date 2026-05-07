@@ -19,8 +19,8 @@ let
   doctest-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "doctest";
-    rev    = "b2f6d077474bc9fa77e8f83cf0ce7213d1c67faf";
-    sha256 = "sha256-liYoSonwDDWt40Oa7SpZn3SqThTDp5bw6e2Duk+sf0s="; #pkgs.lib.fakeSha256;
+    rev    = "86aa9720ecf7581fd2d5be32a5bbdcc0af93c61b";
+    sha256 = "sha256-eCdoadtPHfIloYhXgFlZvYD6JZxc5BYuTvLYszuluLw="; #pkgs.lib.fakeSha256;
   };
 
   fast-tags-repo = pkgs.fetchFromGitHub {
@@ -65,25 +65,6 @@ let
           {}));
 
   allowGhcReference = x: hlib.overrideCabal x (drv: { disallowGhcReference = false; });
-
-  hpkgsDoctest = hutils.fixedExtend hpkgs912 (_: old:
-    builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
-      doctest =
-        hlib.dontCheck ((old.callCabal2nix "doctest" doctest-repo {}).overrideAttrs (oldAttrs: oldAttrs // {
-          # buildInputs = [haskellPackages.GLFW-b];
-          configureFlags = oldAttrs.configureFlags ++ [
-            # cabal config passes RTS options to GHC so doctest will receive them too
-            # ‘cabal repl --with-ghc=doctest’
-            "--ghc-option=-rtsopts"
-          ];
-        }));
-
-      # primitive = hlib.dontCheck (old.callHackage "primitive" "0.8.0.0" {});
-      # tagged = old.callHackage "tagged" "0.8.7" {};
-      # size-based = hlib.doJailbreak old.size-based;
-      #
-      # syb = old.callHackage "syb" "0.7.2.3" {};
-    }));
 
   hpkgsGhcEventsAnalyze = hutils.fixedExtend hpkgs96 (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
@@ -939,6 +920,24 @@ let
       };
     };
 
+  hpkgsDoctest = hutils.fixedExtend haskell-package-sets.host.default (_: old:
+    builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
+      doctest =
+        hlib.dontCheck ((old.callCabal2nix "doctest" doctest-repo {}).overrideAttrs (oldAttrs: oldAttrs // {
+          # buildInputs = [haskellPackages.GLFW-b];
+          configureFlags = oldAttrs.configureFlags ++ [
+            # cabal config passes RTS options to GHC so doctest will receive them too
+            # ‘cabal repl --with-ghc=doctest’
+            "--ghc-option=-rtsopts"
+          ];
+        }));
+
+      # primitive = hlib.dontCheck (old.callHackage "primitive" "0.8.0.0" {});
+      # tagged = old.callHackage "tagged" "0.8.7" {};
+      # size-based = hlib.doJailbreak old.size-based;
+      #
+      # syb = old.callHackage "syb" "0.7.2.3" {};
+    }));
 
 in {
 
