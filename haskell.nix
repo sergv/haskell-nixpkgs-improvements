@@ -12,8 +12,8 @@ let
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
-    rev    = "0363e61a1153e9017736254572a70888f0e6408c"; #"dev";
-    sha256 = "sha256-WN/vuPqSr4WqdfZWifmiBW61xJgxVP/PaU9leLhgzjM="; #pkgs.lib.fakeSha256;
+    rev    = "c3ee995fe99e0be3caa5ac5afcab9b6b16482980"; #"dev";
+    sha256 = "sha256-riBJ2tqpQ/K4VlQv3JA65Fah3OP+ivbZJZ72QDNgT38="; #pkgs.lib.fakeSha256;
   };
 
   doctest-repo = pkgs.fetchFromGitHub {
@@ -127,6 +127,10 @@ let
           "cabal-install-solver"
           (cabal-repo + "/cabal-install-solver")
           {});
+        hooks-exe = hlib.doJailbreak (old.callCabal2nix
+          "hooks-exe"
+          (cabal-repo + "/hooks-exe")
+          {});
         # hlib.dontCheck
         # (old.callHackage "cabal-install-solver" "3.8.1.0" {});
         cabal-install = # hlib.doJailbreak
@@ -170,6 +174,15 @@ let
         # strict = hlib.doJailbreak old.strict;
 
         hashable = hashable-pkg old;
+
+        process = hlib.dontCheck
+          (old.callHackageDirect
+            {
+              pkg    = "process";
+              ver    = "1.6.28.0";
+              sha256 = "sha256-VDQm3JL7gcFMpdE5E+j4nmV/YuYbp7D60DGiRCrgVbs="; #pkgs.lib.fakeSha256;
+            }
+            {});
 
         # unix = hlib.dontCheck
         #   (old.callHackageDirect
