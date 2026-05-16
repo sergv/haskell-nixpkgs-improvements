@@ -12,8 +12,8 @@ let
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
-    rev    = "c3ee995fe99e0be3caa5ac5afcab9b6b16482980"; #"dev";
-    sha256 = "sha256-riBJ2tqpQ/K4VlQv3JA65Fah3OP+ivbZJZ72QDNgT38="; #pkgs.lib.fakeSha256;
+    rev    = "b2941869bfbd2af9dc294b152c814fec2d7afcce"; #"dev";
+    sha256 = "sha256-hUpi2+K2N42j8N4QsVsiAIeKBLgG4djcodUZA02ajxg="; #pkgs.lib.fakeSha256;
   };
 
   doctest-repo = pkgs.fetchFromGitHub {
