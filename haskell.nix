@@ -19,8 +19,8 @@ let
   doctest-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "doctest";
-    rev    = "86aa9720ecf7581fd2d5be32a5bbdcc0af93c61b";
-    sha256 = "sha256-eCdoadtPHfIloYhXgFlZvYD6JZxc5BYuTvLYszuluLw="; #pkgs.lib.fakeSha256;
+    rev    = "24ab3f7c16130569e80deb9a94eaadc3ae5e8aef";
+    sha256 = "sha256-hI3/HVZAqQu/MYTbhfyOOpUIHDxo4/N41xOxh111MKQ="; #pkgs.lib.fakeSha256;
   };
 
   fast-tags-repo = pkgs.fetchFromGitHub {
