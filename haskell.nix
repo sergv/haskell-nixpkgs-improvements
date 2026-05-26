@@ -581,37 +581,17 @@ let
 
   cabal = wrap-cabal (hlib.justStaticExecutables hpkgsCabal.cabal-install);
 
-  latest-ghc-field         = "ghc9122";
+  latest-ghc-field         = "ghc9124";
   latest-ghc-short-version = "9.12";
 
   # ghc-build-pkgs = pkgs.haskell.packages.native-bignum.ghc9101;
   # ghc-build-pkgs = hpkgsCabal;
   ghc-build-pkgs = hpkgs910;
-  latest-ghc-pkg = pkgs.haskell.compiler.native-bignum."${latest-ghc-field}";
+  latest-ghc-pkg = pkgs.haskell.compiler.native-bignum.9141;
 
-  # latest-ghc-pkg = build-ghc {
-  #   base-ghc-to-override = latest-ghc-pkg;
-  #   build-pkgs           = ghc-build-pkgs;
-  #   version              = "9.12.2";
-  #   rev                  = "383be28ffdddf65b57b7b111bfc89808b4229ebc";
-  #   sha256               = "sha256-CsUKRGjJ68QFiLPqQkqhOVMnUbTm1BEz01hnNeZqctc="; #pkgs.lib.fakeSha256;
-  # };
+  ghc912-pkg = pkgs.haskell.compiler.native-bignum.ghc9124;
 
-  ghc912-pkg = build-ghc {
-    base-ghc-to-override = latest-ghc-pkg;
-    build-pkgs           = ghc-build-pkgs;
-    version              = "9.12.3";
-    rev                  = "65370007e2d9f1976fbcfbb514917fb111117148";
-    sha256               = "sha256-3f0K/+76FmeF5KWbEJXMtEcWNtUQGy+ttsLk2nmqY6Q="; #pkgs.lib.fakeSha256;
-  };
-
-  ghc914-pkg = build-ghc {
-    base-ghc-to-override = latest-ghc-pkg;
-    build-pkgs           = ghc-build-pkgs;
-    version              = "9.14.1";
-    rev                  = "902339d332fb4ce2b3c87dcac1ee6495d41ad886";
-    sha256               = "sha256-wsClYVCoinEem20jHTFjiTOMgU8MsEaZ1RAgAMsK078="; #pkgs.lib.fakeSha256;
-  };
+  ghc914-pkg = pkgs.haskell.compiler.native-bignum.ghc9141;
 
   dev-ghc-version = "9.14.1";
   dev-ghc-short-version = "9.14";
@@ -631,7 +611,15 @@ let
       versionGE = to-check: target-version:
         builtins.compareVersions to-check target-version >= 0;
 
-      wine = pkgs-cross-win.winePackages.minimal;
+      # wine = pkgs-cross-win.wine64Packages.minimal.overrideAttrs (old: {
+      #   patches = builtins.filter (x: !(pkgs.lib.strings.hasSuffix "wine-add-dll-directory-11.patch" x)) old.patches;
+      # });
+
+      wine = pkgs.wine64Packages.minimal.overrideAttrs (old: {
+        # Issue with UNC device file paths is fixed in nixos starting from 26.05.
+        # Avoid dependency on X11
+        configureFlags = (old.configureFlags or []) ++ [ "--without-x" ];
+      });
 
       ghc-win-pkg = (win-pkgs.pkgsBuildHost.haskell-nix.compiler."${latest-ghc-field}".override (_: {
         enableNativeBignum = true;
@@ -645,7 +633,7 @@ let
         # win-pkgs.libffi
         # win-pkgs.gmp
         # win-pkgs.windows.mcfgthreads
-        # win-pkgs.windows.mingw_w64_pthreads
+        # win-pkgs.windows.pthreads
         # win-pkgs.buildPackages.gcc.cc
       ];
 
@@ -660,8 +648,9 @@ let
 
       wine-iserv-wrapper-script =
         let
-          iserv-proxy = win-exes.iserv-proxy;
-          exe-name    = win-iserv-proxy-interpreter.exeName;
+          iserv-proxy  = win-exes.iserv-proxy;
+          exe-name     = win-iserv-proxy-interpreter.exeName;
+          no-load-call = lib.optionalString (exe-name != "remote-iserv.exe") "--no-load-call";
           # win-pkgs.windows.pthreads - not needed
         in
           pkgs.pkgsBuildBuild.writeScriptBin "iserv-wrapper"
@@ -670,20 +659,14 @@ let
 
               set -euo pipefail
 
-              function is_port_open() {
-                  let port="$1"
-                  # Native bash way to test ports.
-                  true &>/dev/null </dev/tcp/127.0.0.1/$port && return 0 || return 1
-              }
+              ISERV_ARGS=''${ISERV_ARGS:-}
+              PROXY_ARGS=''${PROXY_ARGS:-}
 
               # May lead to a too large environment so best to unset it.
               unset configureFlags
-
-              PORT=$((5000 + $RANDOM % 5000))
-
-              while is_port_open "$PORT"; do
-                  PORT=$((5000 + $RANDOM % 5000))
-              done
+              unset configurePhase
+              # Not really needed
+              unset pkgsHostTargetAsString
 
               REMOTE_ISERV=/tmp/iserv-tmpdir
               if [[ ! -d "$REMOTE_ISERV" ]]; then
@@ -702,19 +685,13 @@ let
                       small=$(basename "$dll")
                       ln -s "$dll" "$REMOTE_ISERV/''${small#lib}"
                   done
-
               fi
-              (
-                  WINEDLLOVERRIDES="winemac.drv=d" \
-                      WINEDEBUG="warn-all,fixme-all,-menubuilder,-mscoree,-ole,-secur32,-winediag" \
-                      WINEPREFIX="$REMOTE_ISERV/prefix" \
-                      ${wine}/bin/wine64 \
-                      ${win-iserv-proxy-interpreter}/bin/${exe-name} \
-                      "$REMOTE_ISERV/tmp" \
-                      "$PORT" ) &
-              PID="$!"
-              ${iserv-proxy}/bin/iserv-proxy "''${@}" 127.0.0.1 "$PORT"
-              kill "$PID"
+
+              WINEDLLOVERRIDES="winemac.drv=d" \
+                  WINEDEBUG=warn-all,fixme-all,-menubuilder,-mscoree,-ole,-secur32,-winediag \
+                  WINEPREFIX="$REMOTE_ISERV/prefix" \
+
+              ${iserv-proxy}/bin/iserv-proxy "''${@}" --pipe ${lib.getExe wine} ${win-iserv-proxy-interpreter}/bin/${exe-name} "$REMOTE_ISERV/tmp" --stdio ${no-load-call} $ISERV_ARGS
             '';
 
       wine-run-haskell =
@@ -740,8 +717,8 @@ let
             '';
         };
 
-      # "-L${mingw_w64_pthreads}/lib"
-      # "-L${mingw_w64_pthreads}/bin"
+      # "-L${pthreads}/lib"
+      # "-L${pthreads}/bin"
       # "-L${gmp}/lib"
       wrap-win-ghc = pkg: ghc-exe: new-names:
         let wrapped =
@@ -758,8 +735,8 @@ let
                 # "-L${win-pkgs.libffi}/lib" \
                 # "-L${win-pkgs.gmp}/bin" \
                 # "-L${win-pkgs.gmp}/lib" \
-                # "-L${win-pkgs.windows.mingw_w64_pthreads}/lib" \
-                # "-L${win-pkgs.windows.mingw_w64_pthreads}/bin" \
+                # "-L${win-pkgs.windows.pthreads}/lib" \
+                # "-L${win-pkgs.windows.pthreads}/bin" \
                 # "-L${win-pkgs.windows.mcfgthreads}/bin" \
                 # "-L${win-pkgs.windows.mcfgthreads}/lib" \
                 text          =
@@ -768,8 +745,8 @@ let
                       -fexternal-interpreter \
                       -pgmi ${wine-iserv-wrapper-script}/bin/iserv-wrapper \
                       -optc-Wno-incompatible-pointer-types \
-                      -L${win-pkgs.windows.mingw_w64_pthreads}/lib \
-                      -L${win-pkgs.windows.mingw_w64_pthreads}/bin \
+                      -L${win-pkgs.windows.pthreads}/lib \
+                      -L${win-pkgs.windows.pthreads}/bin \
                       "''${@}"
                   '';
               };
@@ -822,11 +799,11 @@ let
                   if [[ ! -d "$PREFIX" ]]; then
                     mkdir -p "$PREFIX"
 
-                    ln -s ${win-iserv-proxy-interpreter}/bin/*.dll "$PREFIX"
+                    ln --force -s ${win-iserv-proxy-interpreter}/bin/*.dll "$PREFIX"
 
                     for p in ${win-pkgs.lib.concatStringsSep " " haskell-win-runner-dll-pkgs}; do
-                      find "$p" -iname '*.dll' -exec ln -sf {} $PREFIX \;
-                      find "$p" -iname '*.dll.a' -exec ln -sf {} $PREFIX \;
+                      find "$p" -iname '*.dll' -exec ln --force -s {} $PREFIX \;
+                      find "$p" -iname '*.dll.a' -exec ln --force -s {} $PREFIX \;
                     done
 
                     # Some DLLs have a `lib` prefix but we attempt to load them without the prefix.
@@ -835,7 +812,7 @@ let
                     (
                       cd $PREFIX
                       for l in lib*.dll; do
-                        ln -s "$l" "''${l#lib}"
+                        ln --force -s "$l" "''${l#lib}"
                       done
                       )
                   fi
@@ -877,7 +854,7 @@ let
   haskell-package-sets =
     let mkGhc914Pkgs = ghc-pkg:
           let hpkgs =
-                hutils.fixedExtend pkgs.haskell.packages.ghcHEAD (new: old: {
+                hutils.fixedExtend pkgs.haskell.packages.ghc9141 (new: old: {
                   ghc          = ghc-pkg;
                   mkDerivation = drv:
                     if drv.pname == "jailbreak-cabal"
@@ -976,11 +953,9 @@ in {
       ghc96      = wrap-ghc                          "9.6.7"  "9.6"         pkgs.haskell.compiler.native-bignum.ghc967;
       ghc98      = wrap-ghc                          "9.8.4"  "9.8"         pkgs.haskell.compiler.native-bignum.ghc984;
 
-      ghc910     = wrap-ghc                          "9.10.2" "9.10"        pkgs.haskell.compiler.native-bignum.ghc9102;
+      ghc910     = wrap-ghc                          "9.10.2" "9.10"        pkgs.haskell.compiler.native-bignum.ghc9103;
 
-      # ghc9121     = wrap-ghc                          "9.12.2" "9.12"        pkgs.haskell.compiler.native-bignum.ghc9122;
-
-      ghc912     = wrap-ghc                          "9.12.3" "9.12"        ghc912-pkg;
+      ghc912     = wrap-ghc                          "9.12.4" "9.12"        ghc912-pkg;
 
       ghc914     = wrap-ghc                          "9.14.1" ["9.14" null] ghc914-pkg;
 
