@@ -304,7 +304,7 @@ let
     }
       ''
         mkdir -p "$out/bin"
-        makeWrapper "${pkg}/bin/cabal" "$out/bin/cabal" --suffix "PKG_CONFIG_PATH" ":" "${pkgs.lib.makeSearchPathOutput "dev" "lib/pkgconfig" bakedInNativeDeps}"
+        makeWrapper "${pkg}/bin/cabal" "$out/bin/cabal" --suffix "PKG_CONFIG_PATH" ":" "${pkgs.lib.makeSearchPathOutput "dev" "share/pkgconfig" bakedInNativeDeps}"
       '';
 
   symlink-exe-to = pkg: source: dests:
