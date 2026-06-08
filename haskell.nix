@@ -12,8 +12,8 @@ let
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
-    rev    = "b2941869bfbd2af9dc294b152c814fec2d7afcce"; #"dev";
-    sha256 = "sha256-hUpi2+K2N42j8N4QsVsiAIeKBLgG4djcodUZA02ajxg="; #pkgs.lib.fakeSha256;
+    rev    = "ebd0f9435b3b2576c8ce620bcc0eefec82645598"; #"dev";
+    sha256 = "sha256-dBTcZVrgvjtCMrdTG848XNWZZqj/dpkWuU8TX5tLXuU="; #pkgs.lib.fakeSha256;
   };
 
   doctest-repo = pkgs.fetchFromGitHub {
@@ -174,6 +174,15 @@ let
         # strict = hlib.doJailbreak old.strict;
 
         hashable = hashable-pkg old;
+
+        semaphore-compat = hlib.dontCheck
+          (old.callHackageDirect
+            {
+              pkg    = "semaphore-compat";
+              ver    = "2.0.0";
+              sha256 = "sha256-s7SAtaEFR+QJ9ZeWn/0k/qq5PgwU1BsiSu/HUoDrQBo="; #pkgs.lib.fakeSha256;
+            }
+            {});
 
         process = hlib.dontCheck
           (old.callHackageDirect
