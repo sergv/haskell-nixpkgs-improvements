@@ -30,6 +30,13 @@ let
     sha256 = "sha256-8QH3p2dQYNd0g0YKgtrRLrYPNLcE8YqIA7pLVXmJ6PI="; #pkgs.lib.fakeSha256;
   };
 
+  eventlog2html-repo = pkgs.fetchFromGitHub {
+    owner  = "sergv";
+    repo   = "eventlog2html";
+    rev    = "1d4fc8cf0793e126eca1d7ccb73f0969b4781263";
+    sha256 = "sha256-WVmvPmMl+UN5X9bJqcJNkReM/D5WSCo5mlGWALYipXo="; #pkgs.lib.fakeSha256;
+  };
+
   # hpkgs = pkgs.haskell.packages.ghc945;
   # Doesn’t work but could be cool: static executables
   # hpkgs = pkgs.pkgsStatic.haskell.packages.ghc961.override {
@@ -83,12 +90,14 @@ let
 
   hpkgsEventlog2html = hutils.fixedExtend hpkgs912 (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
-      eventlog2html = hlib.doJailbreak (hlib.unmarkBroken old.eventlog2html);
-      vector-binary-instances = hlib.doJailbreak old.vector-binary-instances;
 
-      ghc-events = old.callHackage "ghc-events" "0.20.0.0" {};
+      eventlog2html = hlib.doJailbreak (old.callCabal2nix "eventlog2html" eventlog2html-repo {});
+
+      # vector-binary-instances = hlib.doJailbreak old.vector-binary-instances;
+
+      # ghc-events = old.callHackage "ghc-events" "0.20.0.0" {};
       # Disable tests which take around 1 hour!
-      statistics = hlib.dontCheck old.statistics;
+      # statistics = hlib.dontCheck old.statistics;
     }));
 
   hpkgsProfiterole = hutils.fixedExtend hpkgs912 (final: old:
