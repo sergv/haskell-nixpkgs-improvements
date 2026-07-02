@@ -61,8 +61,7 @@
       , ...
       }:
     let systems = ["x86_64-linux" "i686-linux" "aarch64-linux" "aarch64-darwin"];
-        lib = nixpkgs.lib;
-        forEachSystem = lib.genAttrs systems;
+        forEachSystem = nixpkgs.lib.genAttrs systems;
 
         mkHUtils = pkgs: import ./haskell-utils.nix { hlib = pkgs.haskell.lib; lib = pkgs.lib; };
 
