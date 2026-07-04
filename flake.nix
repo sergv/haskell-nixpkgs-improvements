@@ -46,20 +46,20 @@
 
   outputs =
     inputs@
-      { self
-      , nixpkgs
-      , nixpkgs-unstable
-      , haskellNix
+    { self
+    , nixpkgs
+    , nixpkgs-unstable
+    , haskellNix
 
-      , nixpkgs-18-09
-      , nixpkgs-19-09
-      , nixpkgs-20-03
-      , nixpkgs-20-09
-      , nixpkgs-22-11
-      , nixpkgs-23-11
+    , nixpkgs-18-09
+    , nixpkgs-19-09
+    , nixpkgs-20-03
+    , nixpkgs-20-09
+    , nixpkgs-22-11
+    , nixpkgs-23-11
 
-      , ...
-      }:
+    , ...
+    }:
     let systems = ["x86_64-linux" "i686-linux" "aarch64-linux" "aarch64-darwin"];
         forEachSystem = nixpkgs.lib.genAttrs systems;
 
@@ -186,8 +186,7 @@
             # To avoid infinite recursion
             # cabal2nix-unwrapped-orig = prev.cabal2nix-unwrapped; #final.haskell.packages.native-bignum.ghc967.cabal2nix;
             cabal2nix-unwrapped-orig = prev.haskell.packages.native-bignum.ghc967.cabal2nix;
-          }
-          ;
+          };
 
         # Remove dependency on mcfgthreads mingw library. If we keep it
         # then cross-compiling cabal will have a hard time building network
@@ -251,15 +250,15 @@
                 nixpkgs-23-11 = import nixpkgs-23-11 { inherit system; };
               };
           in
-            import ./haskell.nix {
-              inherit pinned-pkgs;
-              hutils         = mkHUtils vanilla-pkgs;
-              hlib           = vanilla-pkgs.haskell.lib;
-              lib            = vanilla-pkgs.lib;
-              pkgs           = vanilla-pkgs;
-              pkgs-cross-win = cross-win-pkgs;
-              is-32-bits     = system == "i686-linux";
-            };
+          import ./haskell.nix {
+            inherit pinned-pkgs;
+            hutils         = mkHUtils vanilla-pkgs;
+            hlib           = vanilla-pkgs.haskell.lib;
+            lib            = vanilla-pkgs.lib;
+            pkgs           = vanilla-pkgs;
+            pkgs-cross-win = cross-win-pkgs;
+            is-32-bits     = system == "i686-linux";
+          };
       };
 
       # (builtins.getFlake "path:/path/to/directory").packages.x86_64-linux.default
@@ -289,9 +288,9 @@
             };
             derived = self.lib.derive-haskell-tools system pkgs null;
         in
-          pkgs.lib.attrsets.unionOfDisjoint
-            derived.ghc.host
-            derived.tools
+        pkgs.lib.attrsets.unionOfDisjoint
+          derived.ghc.host
+          derived.tools
       );
 
       haskell-package-sets = forEachSystem (system:
@@ -302,7 +301,7 @@
             };
             derived = self.lib.derive-haskell-tools system pkgs null;
         in
-          derived.haskell-package-sets
+        derived.haskell-package-sets
       );
 
     };

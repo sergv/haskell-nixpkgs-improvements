@@ -314,12 +314,13 @@ let
   bakedInNativeDeps = [ pkgs.zlib ];
 
   wrap-cabal = pkg:
-    pkgs.runCommand "wrapped-cabal" {
-      # Will require at runtime both libraries and headers (development files) so we’re
-      # taking both.
-      buildInputs       = pkgs.lib.lists.concatMap (x: if builtins.hasAttr "dev" x then [x x.dev] else [x]) bakedInNativeDeps;
-      nativeBuildInputs = [ pkgs.makeWrapper ];
-    }
+    pkgs.runCommand "wrapped-cabal"
+      {
+        # Will require at runtime both libraries and headers (development files) so we’re
+        # taking both.
+        buildInputs       = pkgs.lib.lists.concatMap (x: if builtins.hasAttr "dev" x then [x x.dev] else [x]) bakedInNativeDeps;
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+      }
       ''
         mkdir -p "$out/bin"
         makeWrapper "${pkg}/bin/cabal" "$out/bin/cabal" --suffix "PKG_CONFIG_PATH" ":" "${pkgs.lib.makeSearchPathOutput "dev" "share/pkgconfig" bakedInNativeDeps}"
@@ -332,15 +333,16 @@ let
           let suffix = if builtins.isNull dest then "" else "-${dest}";
           in ''ln -s "${pkg}/bin/${source}" "$out/bin/${dest}"'';
     in
-      pkgs.runCommand ("wrapped-" + source) {
+    pkgs.runCommand ("wrapped-" + source)
+      {
         nativeBuildInputs = [];
       }
-        ''
-          mkdir -p "$out/bin"
-          ${if builtins.isList dests
-            then builtins.concatStringsSep "\n" (builtins.map f dests)
-            else f dests}
-        '';
+      ''
+        mkdir -p "$out/bin"
+        ${if builtins.isList dests
+          then builtins.concatStringsSep "\n" (builtins.map f dests)
+          else f dests}
+      '';
 
   wrap-ghc-arch = old-arch-prefix: new-arch-prefix: old-version: new-version: alias-versions: pkg:
     assert (builtins.isString old-version);
@@ -356,9 +358,10 @@ let
         hasDocs = builtins.hasAttr "doc" pkg; # builtins.elem "doc" pkg.outputs;
 
         wrapped =
-          pkgs.runCommand ("wrapped-ghc-" + old-version) {
-            nativeBuildInputs = [];
-          }
+          pkgs.runCommand ("wrapped-ghc-" + old-version)
+            {
+              nativeBuildInputs = [];
+            }
             # ln -s "${pkg}/bin/$x-${version}" "$out/bin/$x-${version}"
             # makeWrapper "${pkg}/bin/$x-${version}" "$out/bin/$x-${version}" --suffix "LD_LIBRARY_PATH" ":" "${pkgs.lib.makeLibraryPath bakedInNativeDeps}"
             ''
@@ -412,53 +415,54 @@ let
         };
 
     in
-      final;
+    final;
 
   wrap-ghc = version: alias-versions: pkg:
     wrap-ghc-arch null null version version alias-versions pkg;
 
   wrap-ghc-filter-selected-args = filtered-args: version: alias-version: pkg:
     let wrapped-ghc = pkgs.writeShellScript ("filtering-ghc-" + version)
-      ''
-        args=("''${@}")
+          ''
+            args=("''${@}")
 
-        len="''${#args[@]}"
+            len="''${#args[@]}"
 
-        for (( i = 0; i < "$len"; ++i )); do
-          case "''${args[i]}" in
-            ${builtins.concatStringsSep " | " filtered-args} )
-              unset args[i];
-            ;;
-          esac
-        done
+            for (( i = 0; i < "$len"; ++i )); do
+              case "''${args[i]}" in
+                ${builtins.concatStringsSep " | " filtered-args} )
+                  unset args[i];
+                ;;
+              esac
+            done
 
-        exec "${pkg}/bin/ghc-${version}" "''${args[@]}"
-      '';
+            exec "${pkg}/bin/ghc-${version}" "''${args[@]}"
+          '';
     in
-      pkgs.runCommand ("wrapped-filtering-ghc-" + version) {
+    pkgs.runCommand ("wrapped-filtering-ghc-" + version)
+      {
         buildInptus = [ wrapped-ghc ];
       }
-        ''
-          mkdir -p "$out/bin"
-          ln -s "${wrapped-ghc}" "$out/bin/ghc-${version}"
-          ln -s "$out/bin/ghc-${version}" "$out/bin/ghc-${alias-version}"
+      ''
+        mkdir -p "$out/bin"
+        ln -s "${wrapped-ghc}" "$out/bin/ghc-${version}"
+        ln -s "$out/bin/ghc-${version}" "$out/bin/ghc-${alias-version}"
 
-          for x in ghci ghc-pkg haddock hpc runghc; do
+        for x in ghci ghc-pkg haddock hpc runghc; do
 
-            if [[ -f "${pkg}/bin/$x-${version}" ]]; then
-              ln -s "${pkg}/bin/$x-${version}" "$out/bin/$x-${version}"
-            elif [[ -f "${pkg}/bin/$x-ghc-${version}" ]]; then
-              ln -s "${pkg}/bin/$x-ghc-${version}" "$out/bin/$x-${version}"
-            elif [[ -f "${pkg}/bin/$x" ]]; then
-              ln -s "${pkg}/bin/$x" "$out/bin/$x-${version}"
-            else
-              echo "Cannot find source for ‘$x’ in ‘${pkg}/bin’" >&2
-              exit 1
-            fi
+          if [[ -f "${pkg}/bin/$x-${version}" ]]; then
+            ln -s "${pkg}/bin/$x-${version}" "$out/bin/$x-${version}"
+          elif [[ -f "${pkg}/bin/$x-ghc-${version}" ]]; then
+            ln -s "${pkg}/bin/$x-ghc-${version}" "$out/bin/$x-${version}"
+          elif [[ -f "${pkg}/bin/$x" ]]; then
+            ln -s "${pkg}/bin/$x" "$out/bin/$x-${version}"
+          else
+            echo "Cannot find source for ‘$x’ in ‘${pkg}/bin’" >&2
+            exit 1
+          fi
 
-            ln -s "$out/bin/$x-${version}" "$out/bin/$x-${alias-version}"
-          done
-        '';
+          ln -s "$out/bin/$x-${version}" "$out/bin/$x-${alias-version}"
+        done
+      '';
 
   wrap-ghc-filter-hide-source-paths = wrap-ghc-filter-selected-args [
     "-fhide-source-paths"
@@ -474,9 +478,10 @@ let
     let f = suffix:
           assert (builtins.isString suffix && !(suffix == ""));
           ''ln -s "${pkg}/bin/$x-${version}" "$out/bin/$x-${suffix}"'';
-    in pkgs.runCommand ("wrapped-renamed-ghc-" + version) {
-      # buildInputs = [ pkgs.makeWrapper ];
-    }
+    in pkgs.runCommand ("wrapped-renamed-ghc-" + version)
+      {
+        # buildInputs = [ pkgs.makeWrapper ];
+      }
       ''
         mkdir -p "$out/bin"
         for x in ghc ghci ghc-pkg haddock-ghc runghc; do
@@ -490,7 +495,7 @@ let
 
   ghc-platform =
     { mkDerivation, base, lib
-    # GHC source tree to build ghc-toolchain from
+      # GHC source tree to build ghc-toolchain from
     , ghcSrc
     , ghcVersion
     }:
@@ -507,7 +512,7 @@ let
   ghc-toolchain =
     { mkDerivation, base, directory, filepath, ghc-platform, lib
     , process, text, transformers
-    # GHC source tree to build ghc-toolchain from
+      # GHC source tree to build ghc-toolchain from
     , ghcVersion
     , ghcSrc
     }:
@@ -542,60 +547,60 @@ let
         ghc-toolchain-pkg = callPackage' ghc-toolchain { ghc-platform = ghc-platform-pkg; };
 
     in
-      disableAllHardening ((ghc'.override (old: old // {
-        # stdenv             = pkgs.llvmPackages.stdenv;
+    disableAllHardening ((ghc'.override (old: old // {
+      # stdenv             = pkgs.llvmPackages.stdenv;
 
-        # Need to disable for 32 bit builds, otherwise some big files within cannot be
-        # compiled due to ld.gold exhausting memory.
-        enableProfiledLibs = !is-32-bits;
+      # Need to disable for 32 bit builds, otherwise some big files within cannot be
+      # compiled due to ld.gold exhausting memory.
+      enableProfiledLibs = !is-32-bits;
 
-        enableShared = true;
-        enableRelocatedStaticLibs = false; #true;
+      enableShared = true;
+      enableRelocatedStaticLibs = false; #true;
 
-        ghcFlavour =
-          let hie_files =
-                if hutils.version-ge version "9.14"
-                then "+hie_files"
-                else "";
-              base =
-                if builtins.hasAttr "ghcFlavour" old
-                then old.ghcFlavour
-                else "release+split_sections";
-          in
-            base + hie_files;
+      ghcFlavour =
+        let hie_files =
+              if hutils.version-ge version "9.14"
+              then "+hie_files"
+              else "";
+            base =
+              if builtins.hasAttr "ghcFlavour" old
+              then old.ghcFlavour
+              else "release+split_sections";
+        in
+        base + hie_files;
 
-        enableNativeBignum = true;
+      enableNativeBignum = true;
 
-        # enableDocs         = true; #false;
+      # enableDocs         = true; #false;
 
-        bootPkgs = build-pkgs;
+      bootPkgs = build-pkgs;
 
-        hadrian  = hlib.doJailbreak (ghc'.hadrian.override (old2: old2 // {
-          inherit ghcSrc;
-          ghc-platform  = hutils.makeHaskellPackageSmaller ghc-platform-pkg;
-          ghc-toolchain = hutils.makeHaskellPackageSmaller ghc-toolchain-pkg;
-          ghcVersion    = version;
-        }));
-
+      hadrian  = hlib.doJailbreak (ghc'.hadrian.override (old2: old2 // {
         inherit ghcSrc;
-      })).overrideAttrs (old: {
-        inherit version;
-        # Silence warning about overriding ‘version’ field without touching ‘src’.
-        __intentionallyOverridingVersion = true;
-
-        postInstall =
-          builtins.replaceStrings [ base-ghc-to-override.version ] [ "${version}" ] old.postInstall;
-
-        preConfigure = old.preConfigure +
-          # builtins.replaceStrings [ base-ghc-to-override.version ] [ "${version}" ] old.preConfigure +
-
-          # Do this if taking sources from git directly.
-          ''
-            echo ${version} > VERSION
-            echo ${rev} > GIT_COMMIT_ID
-            ./boot
-          '';
+        ghc-platform  = hutils.makeHaskellPackageSmaller ghc-platform-pkg;
+        ghc-toolchain = hutils.makeHaskellPackageSmaller ghc-toolchain-pkg;
+        ghcVersion    = version;
       }));
+
+      inherit ghcSrc;
+    })).overrideAttrs (old: {
+      inherit version;
+      # Silence warning about overriding ‘version’ field without touching ‘src’.
+      __intentionallyOverridingVersion = true;
+
+      postInstall =
+        builtins.replaceStrings [ base-ghc-to-override.version ] [ "${version}" ] old.postInstall;
+
+      preConfigure = old.preConfigure +
+      # builtins.replaceStrings [ base-ghc-to-override.version ] [ "${version}" ] old.preConfigure +
+
+      # Do this if taking sources from git directly.
+      ''
+        echo ${version} > VERSION
+        echo ${rev} > GIT_COMMIT_ID
+        ./boot
+      '';
+    }));
 
   cabal = wrap-cabal (hlib.justStaticExecutables hpkgsCabal.cabal-install);
 
@@ -671,46 +676,46 @@ let
           no-load-call = lib.optionalString (exe-name != "remote-iserv.exe") "--no-load-call";
           # win-pkgs.windows.pthreads - not needed
         in
-          pkgs.pkgsBuildBuild.writeScriptBin "iserv-wrapper"
-            ''
-              #!${pkgs-cross-win.pkgsBuildBuild.bash}/bin/bash
+        pkgs.pkgsBuildBuild.writeScriptBin "iserv-wrapper"
+          ''
+            #!${pkgs-cross-win.pkgsBuildBuild.bash}/bin/bash
 
-              set -euo pipefail
+            set -euo pipefail
 
-              ISERV_ARGS=''${ISERV_ARGS:-}
-              PROXY_ARGS=''${PROXY_ARGS:-}
+            ISERV_ARGS=''${ISERV_ARGS:-}
+            PROXY_ARGS=''${PROXY_ARGS:-}
 
-              # May lead to a too large environment so best to unset it.
-              unset configureFlags
-              unset configurePhase
-              # Not really needed
-              unset pkgsHostTargetAsString
+            # May lead to a too large environment so best to unset it.
+            unset configureFlags
+            unset configurePhase
+            # Not really needed
+            unset pkgsHostTargetAsString
 
-              REMOTE_ISERV=/tmp/iserv-tmpdir
-              if [[ ! -d "$REMOTE_ISERV" ]]; then
-                  mkdir -p "$REMOTE_ISERV/tmp"
-                  ln -s ${win-iserv-proxy-interpreter}/bin/*.dll "$REMOTE_ISERV"
+            REMOTE_ISERV=/tmp/iserv-tmpdir
+            if [[ ! -d "$REMOTE_ISERV" ]]; then
+                mkdir -p "$REMOTE_ISERV/tmp"
+                ln -s ${win-iserv-proxy-interpreter}/bin/*.dll "$REMOTE_ISERV"
 
-                  for p in ${pkgs.lib.concatStringsSep " " haskell-win-runner-dll-pkgs}; do
-                      find "$p" -iname '*.dll' -exec ln -sf {} $REMOTE_ISERV \;
-                      find "$p" -iname '*.dll.a' -exec ln -sf {} $REMOTE_ISERV \;
-                  done
+                for p in ${pkgs.lib.concatStringsSep " " haskell-win-runner-dll-pkgs}; do
+                    find "$p" -iname '*.dll' -exec ln -sf {} $REMOTE_ISERV \;
+                    find "$p" -iname '*.dll.a' -exec ln -sf {} $REMOTE_ISERV \;
+                done
 
-                  # Some DLLs have a `lib` prefix but we attempt to load them without the prefix.
-                  # This was a problem for `double-conversion` package when used in TH code.
-                  # Creating links from the `X.dll` to `libX.dll` works around this issue.
-                  for dll in "$REMOTE_ISERV"/*.dll; do
-                      small=$(basename "$dll")
-                      ln -s "$dll" "$REMOTE_ISERV/''${small#lib}"
-                  done
-              fi
+                # Some DLLs have a `lib` prefix but we attempt to load them without the prefix.
+                # This was a problem for `double-conversion` package when used in TH code.
+                # Creating links from the `X.dll` to `libX.dll` works around this issue.
+                for dll in "$REMOTE_ISERV"/*.dll; do
+                    small=$(basename "$dll")
+                    ln -s "$dll" "$REMOTE_ISERV/''${small#lib}"
+                done
+            fi
 
-              WINEDLLOVERRIDES="winemac.drv=d" \
-                  WINEDEBUG=warn-all,fixme-all,-menubuilder,-mscoree,-ole,-secur32,-winediag \
-                  WINEPREFIX="$REMOTE_ISERV/prefix" \
+            WINEDLLOVERRIDES="winemac.drv=d" \
+                WINEDEBUG=warn-all,fixme-all,-menubuilder,-mscoree,-ole,-secur32,-winediag \
+                WINEPREFIX="$REMOTE_ISERV/prefix" \
 
-              ${iserv-proxy}/bin/iserv-proxy "''${@}" --pipe ${lib.getExe wine} ${win-iserv-proxy-interpreter}/bin/${exe-name} "$REMOTE_ISERV/tmp" --stdio ${no-load-call} $ISERV_ARGS
-            '';
+            ${iserv-proxy}/bin/iserv-proxy "''${@}" --pipe ${lib.getExe wine} ${win-iserv-proxy-interpreter}/bin/${exe-name} "$REMOTE_ISERV/tmp" --stdio ${no-load-call} $ISERV_ARGS
+          '';
 
       wine-run-haskell =
         let dll-path =
@@ -842,29 +847,29 @@ let
                     "''${@}"
                 '';
         in
-          pkgs-cross-win.pkgsBuildBuild.writeShellApplication {
-            name          = "cabal-win";
-            runtimeInputs = [
-              cabal
-              ghc-win-wrapped
-              ghc-pkg-win-wrapped
-              hsc2hs-win-wrapped
-              # For ‘x86_64-w64-mingw32-ld’
-              win-pkgs.buildPackages.binutils
-            ];
-            text          =
-              ''
-                cmd="$1"
-                shift
-                cabal "$cmd" \
-                  --with-compiler ${ghc-win-exe-name} \
-                  --with-hc-pkg ${ghc-pkg-win-exe-name} \
-                  --with-hsc2hs ${hsc2hs-win-exe-name} \
-                  --with-ld "x86_64-w64-mingw32-ld" \
-                  --test-wrapper "${test-wrapper}/bin/cabal-win-test-wrapper" \
-                  "''${@}"
-              '';
-          };
+        pkgs-cross-win.pkgsBuildBuild.writeShellApplication {
+          name          = "cabal-win";
+          runtimeInputs = [
+            cabal
+            ghc-win-wrapped
+            ghc-pkg-win-wrapped
+            hsc2hs-win-wrapped
+            # For ‘x86_64-w64-mingw32-ld’
+            win-pkgs.buildPackages.binutils
+          ];
+          text          =
+            ''
+              cmd="$1"
+              shift
+              cabal "$cmd" \
+                --with-compiler ${ghc-win-exe-name} \
+                --with-hc-pkg ${ghc-pkg-win-exe-name} \
+                --with-hsc2hs ${hsc2hs-win-exe-name} \
+                --with-ld "x86_64-w64-mingw32-ld" \
+                --test-wrapper "${test-wrapper}/bin/cabal-win-test-wrapper" \
+                "''${@}"
+            '';
+        };
     in {
       inherit ghc-win-wrapped ghc-pkg-win-wrapped hsc2hs-win-wrapped wine-run-haskell cabal-win-wrapped;
     };
