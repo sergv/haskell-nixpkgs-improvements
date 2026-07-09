@@ -200,7 +200,7 @@
           };
         };
 
-        host-overlay = lib.composeManyExtensions [
+        host-overlay = nixpkgs.lib.composeManyExtensions [
           fixes-overlay
           haskell-disable-checks-overlay
           smaller-haskell-overlay
@@ -273,7 +273,7 @@
       overlays = {
         host = host-overlay;
         cross-win =
-          lib.composeManyExtensions [
+          nixpkgs.lib.composeManyExtensions [
             use-win32-thread-model-overlay
             haskellNix.overlay
             host-overlay
