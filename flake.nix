@@ -245,9 +245,9 @@
                 nixpkgs-18-09 = import nixpkgs-18-09 { inherit system; };
                 nixpkgs-19-09 = import nixpkgs-19-09 { inherit system; };
                 nixpkgs-20-03 = import nixpkgs-20-03 { inherit system; };
-                nixpkgs-20-09 = import nixpkgs-20-09 { inherit system; };
-                nixpkgs-22-11 = import nixpkgs-22-11 { inherit system; };
-                nixpkgs-23-11 = import nixpkgs-23-11 { inherit system; };
+                nixpkgs-20-09 = nixpkgs-20-09.legacyPackages."${system}";
+                nixpkgs-22-11 = nixpkgs-22-11.legacyPackages."${system}";
+                nixpkgs-23-11 = nixpkgs-23-11.legacyPackages."${system}";
               };
           in
           import ./haskell.nix {
@@ -281,12 +281,14 @@
       };
 
       packages = forEachSystem (system:
-        let pkgs = import nixpkgs {
-              inherit system;
-              config = self.config.host;
-              overlays = [ self.overlays.host ];
-            };
-            derived = self.lib.derive-haskell-tools system pkgs null;
+        let
+          # pkgs = import nixpkgs {
+          #   inherit system;
+          #   config = self.config.host;
+          #   overlays = [ self.overlays.host ];
+          # };
+          pkgs = nixpkgs.legacyPackages."${system}";
+          derived = self.lib.derive-haskell-tools system pkgs null;
         in
         pkgs.lib.attrsets.unionOfDisjoint
           derived.ghc.host
@@ -294,12 +296,14 @@
       );
 
       haskell-package-sets = forEachSystem (system:
-        let pkgs = import nixpkgs {
-              inherit system;
-              config = self.config.host;
-              overlays = [ self.overlays.host ];
-            };
-            derived = self.lib.derive-haskell-tools system pkgs null;
+        let
+          # pkgs = import nixpkgs {
+          #   inherit system;
+          #   config = self.config.host;
+          #   overlays = [ self.overlays.host ];
+          # };
+          pkgs = nixpkgs.legacyPackages."${system}";
+          derived = self.lib.derive-haskell-tools system pkgs null;
         in
         derived.haskell-package-sets
       );
