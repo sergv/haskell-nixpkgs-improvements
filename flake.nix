@@ -201,11 +201,11 @@
         };
 
         host-overlay = nixpkgs.lib.composeManyExtensions [
-          fixes-overlay
-          haskell-disable-checks-overlay
-          smaller-haskell-overlay
+          # fixes-overlay
+          # haskell-disable-checks-overlay
+          # smaller-haskell-overlay
           enable-ghc-unit-ids-overlay
-          preserve-orig-cabal2nix-overlay
+          # preserve-orig-cabal2nix-overlay
         ];
     in {
 
