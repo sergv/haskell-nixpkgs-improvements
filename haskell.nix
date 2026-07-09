@@ -877,7 +877,7 @@ let
   haskell-package-sets =
     let mkGhc914Pkgs = ghc-pkg:
           let hpkgs =
-                hutils.fixedExtend pkgs.haskell.packages.ghc9141 (new: old: {
+                hutils.fixedExtend pkgs.haskell.packages.native-bignum.ghc9141 (new: old: {
                   ghc          = ghc-pkg;
                   mkDerivation = drv:
                     if drv.pname == "jailbreak-cabal"
