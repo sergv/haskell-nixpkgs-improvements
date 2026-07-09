@@ -64,7 +64,7 @@ let # Disable profiling and haddock
           hadrianFlags = addElemToAttrUniq "--hash-unit-ids" "hadrianFlags" old [];
           hadrianArgs  = addElemToAttrUniq "--hash-unit-ids" "hadrianArgs"  old [];
 
-          # haskell.nix ghc builder does not expase hadrian argumens so we have to hack
+          # haskell.nix ghc builder does not expose hadrian arguments so we have to hack
           # hadrian shell invocation here instead of using hadrianFlags/hadrianArgs
           buildPhase = builtins.replaceStrings [" --flavour="] [" --hash-unit-ids --flavour="] old.buildPhase;
         })
