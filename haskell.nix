@@ -76,17 +76,16 @@ let
       brick = hlib.doJailbreak old.brick;
     }));
 
-  hpkgsEventlog2html = hutils.fixedExtend hpkgs912 (_: old:
-    builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
+  hpkgsEventlog2html = hutils.fixedExtend hpkgs914 (_: old: {
 
-      eventlog2html = hlib.doJailbreak (old.callCabal2nix "eventlog2html" eventlog2html-repo {});
+    eventlog2html = hlib.doJailbreak (old.callCabal2nix "eventlog2html" eventlog2html-repo {});
 
-      # vector-binary-instances = hlib.doJailbreak old.vector-binary-instances;
+    # vector-binary-instances = hlib.doJailbreak old.vector-binary-instances;
 
-      # ghc-events = old.callHackage "ghc-events" "0.20.0.0" {};
-      # Disable tests which take around 1 hour!
-      # statistics = hlib.dontCheck old.statistics;
-    }));
+    # ghc-events = old.callHackage "ghc-events" "0.20.0.0" {};
+    # Disable tests which take around 1 hour!
+    # statistics = hlib.dontCheck old.statistics;
+  });
 
   hpkgsProfiterole = hutils.fixedExtend hpkgs912 (final: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
