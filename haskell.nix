@@ -184,15 +184,6 @@ let
         }
         {});
 
-    process = hlib.dontCheck
-      (old.callHackageDirect
-        {
-          pkg    = "process";
-          ver    = "1.6.28.0";
-          sha256 = "sha256-VDQm3JL7gcFMpdE5E+j4nmV/YuYbp7D60DGiRCrgVbs="; #pkgs.lib.fakeSha256;
-        }
-        {});
-
     # unix = hlib.dontCheck
     #   (old.callHackageDirect
     #     {
@@ -830,67 +821,87 @@ let
   haskell-package-sets =
     let mkGhc914Pkgs = ghc-pkg:
           let hpkgs =
-                hutils.fixedExtend pkgs.haskell.packages.native-bignum.ghc9141 (new: old: {
-                  ghc          = ghc-pkg;
-                  mkDerivation = drv:
-                    # Important to keep changes to administractive packages like jailbreak-cabal
-                    # to a minimum.
-                    if drv.pname == "jailbreak-cabal"
-                    then old.mkDerivation drv
-                    else
-                      old.mkDerivation (drv // {
-                        jailbreak = true;
-                        # doHaddock = false;
-                        # doCheck = true;
-                        # doBenchmark = false;
-                        # doHoogle = true;
-                        doHaddock = false;
-                        enableLibraryProfiling = false;
-                        # enableExecutableProfiling = false;
-                      });
+                hutils.fixedExtend pkgs.haskell.packages.native-bignum.ghc9141 (new: old:
+                  builtins.mapAttrs
+                    (name: x: x)
+                    # (hutils.onlyApplyToHaskellPackages hlib.allowInconsistentDependencies)
+                    (old // {
+                      ghc          = ghc-pkg;
+                      mkDerivation = drv:
+                        # Important to keep changes to administractive packages like jailbreak-cabal
+                        # to a minimum.
+                        if drv.pname == "jailbreak-cabal"
+                        then old.mkDerivation drv
+                        else
+                          old.mkDerivation (drv // {
+                            jailbreak = true;
+                            # doHaddock = false;
+                            # doCheck = true;
+                            # doBenchmark = false;
+                            # doHoogle = true;
+                            doHaddock = false;
+                            enableLibraryProfiling = false;
+                            # enableExecutableProfiling = false;
+                          });
 
-                  enummapset =
-                    old.callCabal2nix
-                      "enummapset"
-                      (pkgs.fetchFromGitHub {
-                        owner  = "Mikolaj";
-                        repo   = "enummapset";
-                        rev    = "601e862fbf93cf03ed297016920fa0c0110a5e4c";
-                        sha256 = "sha256-H+sw32kl4AVJ7dTJkZpYt4Z4uXOgLWE3SoyxAAtiiAs="; #pkgs.lib.fakeSha256;
-                      })
-                      {};
+                      enummapset =
+                        old.callCabal2nix
+                          "enummapset"
+                          (pkgs.fetchFromGitHub {
+                            owner  = "Mikolaj";
+                            repo   = "enummapset";
+                            rev    = "601e862fbf93cf03ed297016920fa0c0110a5e4c";
+                            sha256 = "sha256-H+sw32kl4AVJ7dTJkZpYt4Z4uXOgLWE3SoyxAAtiiAs="; #pkgs.lib.fakeSha256;
+                          })
+                          {};
 
-                  # Broken with QuickCheck 2.18
-                  dlist = hlib.dontCheck old.dlist;
-                  # Take too long
-                  statistics = hlib.dontCheck old.statistics;
+                      # Broken with QuickCheck 2.18
+                      dlist = hlib.dontCheck old.dlist;
+                      # Take too long
+                      statistics = hlib.dontCheck old.statistics;
 
-                  QuickCheck =
-                    hlib.dontCheck
-                      (old.callHackage "QuickCheck" "2.18.0.0" {});
+                      QuickCheck =
+                        hlib.dontCheck
+                          (old.callHackage "QuickCheck" "2.18.0.0" {});
 
-                  quickcheck-instances =
-                    (old.callHackage "quickcheck-instances" "0.4" {});
+                      quickcheck-instances =
+                        (old.callHackage "quickcheck-instances" "0.4" {});
 
-                  # integer-logarithms =
-                  #   (old.callHackageDirect {
-                  #     pkg    = "integer-logarithms";
-                  #     ver    = "1.0.5";
-                  #     sha256 = "sha256-fVcwxYyw7Ant0YfS2QrYb+lk6GhCSG1hYbar4TwBwnM="; #pkgs.lib.fakeSha256;
-                  #   }
-                  #     {});
+                      process = hlib.dontCheck
+                        (old.callHackageDirect
+                          {
+                            pkg    = "process";
+                            ver    = "1.6.30.0";
+                            sha256 = "sha256-grK+qHD8wGYaHMd1a0KwsJyzml1XeXnz/1pPNg7p3aA="; #pkgs.lib.fakeSha256;
+                          }
+                          {});
 
-                  # algebraic-graphs =
-                  #   old.callCabal2nix
-                  #     "alga"
-                  #     (pkgs.fetchFromGitHub {
-                  #       owner  = "snowleopard";
-                  #       repo   = "alga";
-                  #       rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
-                  #       sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
-                  #     })
-                  #     {};
-                });
+                      # Caused by process 1.6.30 tha conflicts with boot library but
+                      # ultimately only affects tests that depend on ‘tasty-inspection-testing’
+                      # or doctests (i.e. packages that involve ghc).
+                      vector = hlib.allowInconsistentDependencies old.vector;
+                      doctest = hlib.allowInconsistentDependencies old.doctest;
+                      tasty-inspection-testing = hlib.allowInconsistentDependencies old.tasty-inspection-testing;
+
+                      # integer-logarithms =
+                      #   (old.callHackageDirect {
+                      #     pkg    = "integer-logarithms";
+                      #     ver    = "1.0.5";
+                      #     sha256 = "sha256-fVcwxYyw7Ant0YfS2QrYb+lk6GhCSG1hYbar4TwBwnM="; #pkgs.lib.fakeSha256;
+                      #   }
+                      #     {});
+
+                      # algebraic-graphs =
+                      #   old.callCabal2nix
+                      #     "alga"
+                      #     (pkgs.fetchFromGitHub {
+                      #       owner  = "snowleopard";
+                      #       repo   = "alga";
+                      #       rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
+                      #       sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
+                      #     })
+                      #     {};
+                    }));
           in
           hpkgs;
           # Not needed any more.
