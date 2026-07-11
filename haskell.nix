@@ -50,6 +50,7 @@ let
   hpkgs96 = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc96;
   hpkgs910 = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc910;
   hpkgs912 = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc912;
+  hpkgs914 = haskell-package-sets.host.default;
   # hpkgs981 = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc981;
 
   overrideCabal = revision: editedSha: pkg:
@@ -57,8 +58,6 @@ let
       inherit revision;
       editedCabalFile = editedSha;
     };
-
-  # hpkgsCabal-raw = pkgs.haskell.packages.ghc945.o
 
   hashable-pkg = pkgs:
     hlib.doJailbreak
@@ -106,24 +105,27 @@ let
     }));
 
   # pkgs.haskell.packages.ghc961
-  hpkgsCabal = hutils.fixedExtend hpkgs912 (new: old:
+  hpkgsCabal = hutils.fixedExtend hpkgs914 (new: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller
       (old // {
         # ghc = hutils.smaller-ghc(old.ghc);
 
         # builtins.mapAttrs (_name: value: hlib.doJailbreak value) old //
-        Cabal = old.callCabal2nix
-          "Cabal"
-          (cabal-repo + "/Cabal")
+        Cabal =
+          # Jailbreaking leads to infinite recursion because ‘jailbreak-cabal’ depends on ‘Cabal’.
+          hlib.dontJailbreak
+            (old.callCabal2nix
+              "Cabal"
+              (cabal-repo + "/Cabal")
+              {});
+        Cabal-described = old.callCabal2nix
+          "Cabal-described"
+          (cabal-repo + "/Cabal-described")
           {};
-        # Cabal-described = old.callCabal2nix
-        #   "Cabal-described"
-        #   (cabal-repo + "/Cabal-described")
-        #   {};
-        # Cabal-hooks = old.callCabal2nix
-        #   "Cabal-hooks"
-        #   (cabal-repo + "/Cabal-hooks")
-        #   {};
+        Cabal-hooks = old.callCabal2nix
+          "Cabal-hooks"
+          (cabal-repo + "/Cabal-hooks")
+          {};
         Cabal-syntax = old.callCabal2nix
           "Cabal-syntax"
           (cabal-repo + "/Cabal-syntax")
@@ -132,11 +134,13 @@ let
           "Cabal-tests"
           (cabal-repo + "/Cabal-tests")
           {};
-        cabal-install-solver = hlib.doJailbreak (old.callCabal2nix
+        cabal-install-solver = # hlib.doJailbreak
+          (old.callCabal2nix
           "cabal-install-solver"
           (cabal-repo + "/cabal-install-solver")
           {});
-        hooks-exe = hlib.doJailbreak (old.callCabal2nix
+        hooks-exe = # hlib.doJailbreak
+          (old.callCabal2nix
           "hooks-exe"
           (cabal-repo + "/hooks-exe")
           {});
@@ -177,12 +181,13 @@ let
         # Requires doctest which requires ghc-paths which doesn’t support Cabal 3.17 we have.
         vector = hlib.dontCheck old.vector;
 
+        # Brings entropy 0.4.1.11 which doesn’t build with Cabal 3.17+
+        HTTP = hlib.dontCheck old.HTTP;
+
         # # file-io = hlib.dontCheck old.file-io;
         #
         # uuid-types = hlib.doJailbreak old.uuid-types;
         # strict = hlib.doJailbreak old.strict;
-
-        hashable = hashable-pkg old;
 
         semaphore-compat = hlib.dontCheck
           (old.callHackageDirect
@@ -936,17 +941,20 @@ let
                   #     })
                   #     {};
                 });
-          in hutils.fixedExtend hpkgs (new: old: {
-            buildHaskellPackages =
-              hutils.fixedExtend hpkgs
-                # hutils.fixedExtend old.buildHaskellPackages
-                (_new2: _old2: {
-                  # Override build tools used by Haskell mkDerivation to
-                  # avoid references to ghcHEAD compiler.
-                  hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
-                  jailbreak-cabal = new.jailbreak-cabal; #pkgs.haskell.packages.native-bignum.ghc912.jailbreak-cabal;
-                });
-          });
+          in
+          hpkgs;
+          # Not needed any more.
+          #   hutils.fixedExtend hpkgs (new: old: {
+          #   buildHaskellPackages =
+          #     hutils.fixedExtend hpkgs
+          #       # hutils.fixedExtend old.buildHaskellPackages
+          #       (_new2: _old2: {
+          #         # Override build tools used by Haskell mkDerivation to
+          #         # avoid references to ghcHEAD compiler.
+          #         hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
+          #         jailbreak-cabal = new.jailbreak-cabal; #pkgs.haskell.packages.native-bignum.ghc912.jailbreak-cabal;
+          #       });
+          # });
 
     in {
       host = rec {
