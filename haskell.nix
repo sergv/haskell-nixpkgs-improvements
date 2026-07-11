@@ -914,6 +914,9 @@ let
                     hlib.dontCheck
                       (old.callHackage "QuickCheck" "2.18.0.0" {});
 
+                  quickcheck-instances =
+                    (old.callHackage "quickcheck-instances" "0.4" {});
+
                   # integer-logarithms =
                   #   (old.callHackageDirect {
                   #     pkg    = "integer-logarithms";
