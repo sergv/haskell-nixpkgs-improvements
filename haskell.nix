@@ -105,154 +105,152 @@ let
     }));
 
   # pkgs.haskell.packages.ghc961
-  hpkgsCabal = hutils.fixedExtend hpkgs914 (new: old:
-    builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller
-      (old // {
-        # ghc = hutils.smaller-ghc(old.ghc);
+  hpkgsCabal = hutils.fixedExtend hpkgs914 (new: old: {
+    # ghc = hutils.smaller-ghc(old.ghc);
 
-        # builtins.mapAttrs (_name: value: hlib.doJailbreak value) old //
-        Cabal =
-          # Jailbreaking leads to infinite recursion because ‘jailbreak-cabal’ depends on ‘Cabal’.
-          hlib.dontJailbreak
-            (old.callCabal2nix
-              "Cabal"
-              (cabal-repo + "/Cabal")
-              {});
-        Cabal-described = old.callCabal2nix
-          "Cabal-described"
-          (cabal-repo + "/Cabal-described")
-          {};
-        Cabal-hooks = old.callCabal2nix
-          "Cabal-hooks"
-          (cabal-repo + "/Cabal-hooks")
-          {};
-        Cabal-syntax = old.callCabal2nix
-          "Cabal-syntax"
-          (cabal-repo + "/Cabal-syntax")
-          {};
-        Cabal-tests = old.callCabal2nix
-          "Cabal-tests"
-          (cabal-repo + "/Cabal-tests")
-          {};
-        cabal-install-solver = # hlib.doJailbreak
-          (old.callCabal2nix
-          "cabal-install-solver"
-          (cabal-repo + "/cabal-install-solver")
+    # builtins.mapAttrs (_name: value: hlib.doJailbreak value) old //
+    Cabal =
+      # Jailbreaking leads to infinite recursion because ‘jailbreak-cabal’ depends on ‘Cabal’.
+      hlib.dontJailbreak
+        (old.callCabal2nix
+          "Cabal"
+          (cabal-repo + "/Cabal")
           {});
-        hooks-exe = # hlib.doJailbreak
-          (old.callCabal2nix
-          "hooks-exe"
-          (cabal-repo + "/hooks-exe")
-          {});
-        # hlib.dontCheck
-        # (old.callHackage "cabal-install-solver" "3.8.1.0" {});
-        cabal-install = # hlib.doJailbreak
-          (old.callCabal2nix
-            "cabal-install"
-            (cabal-repo + "/cabal-install")
-            { inherit (new) Cabal-described Cabal-QuickCheck Cabal-tree-diff Cabal-tests;
-            });
+    Cabal-described = old.callCabal2nix
+      "Cabal-described"
+      (cabal-repo + "/Cabal-described")
+      {};
+    Cabal-hooks = old.callCabal2nix
+      "Cabal-hooks"
+      (cabal-repo + "/Cabal-hooks")
+      {};
+    Cabal-syntax = old.callCabal2nix
+      "Cabal-syntax"
+      (cabal-repo + "/Cabal-syntax")
+      {};
+    Cabal-tests = old.callCabal2nix
+      "Cabal-tests"
+      (cabal-repo + "/Cabal-tests")
+      {};
+    cabal-install-solver = # hlib.doJailbreak
+      (old.callCabal2nix
+        "cabal-install-solver"
+        (cabal-repo + "/cabal-install-solver")
+        {});
+    hooks-exe = # hlib.doJailbreak
+      (old.callCabal2nix
+        "hooks-exe"
+        (cabal-repo + "/hooks-exe")
+        {});
+    # hlib.dontCheck
+    # (old.callHackage "cabal-install-solver" "3.8.1.0" {});
+    cabal-install = # hlib.doJailbreak
+      (old.callCabal2nix
+        "cabal-install"
+        (cabal-repo + "/cabal-install")
+        { inherit (new) Cabal-described Cabal-QuickCheck Cabal-tree-diff Cabal-tests;
+        });
 
-        hackage-security =
-          # hlib.doJailbreak
-          #   (old.callHackage "hackage-security" "0.6.3.1" {});
-          # hlib.doJailbreak
-          (overrideCabal
-            "1"
-            "sha256-5yidF8pwnRrPubtDQC68/mwSbv+eC9omvrPGh9isJuo=" #pkgs.lib.fakeSha256
-            (old.callHackageDirect
-              {
-                pkg    = "hackage-security";
-                ver    = "0.6.3.1";
-                sha256 = "sha256-pbU35af2jqFhAtKDtkFRt4jY4m+BU5rpG1shr8qZiaQ="; #pkgs.lib.fakeSha256;
-              }
-              {}));
+    hackage-security =
+      # hlib.doJailbreak
+      #   (old.callHackage "hackage-security" "0.6.3.1" {});
+      # hlib.doJailbreak
+      (overrideCabal
+        "1"
+        "sha256-5yidF8pwnRrPubtDQC68/mwSbv+eC9omvrPGh9isJuo=" #pkgs.lib.fakeSha256
+        (old.callHackageDirect
+          {
+            pkg    = "hackage-security";
+            ver    = "0.6.3.1";
+            sha256 = "sha256-pbU35af2jqFhAtKDtkFRt4jY4m+BU5rpG1shr8qZiaQ="; #pkgs.lib.fakeSha256;
+          }
+          {}));
 
-        # semaphore-compat = hlib.markUnbroken old.semaphore-compat;
+    # semaphore-compat = hlib.markUnbroken old.semaphore-compat;
 
-        # # Force reinstall
-        # semaphore-compat = old.callHackage "semaphore-compat" "1.0.0" {};
+    # # Force reinstall
+    # semaphore-compat = old.callHackage "semaphore-compat" "1.0.0" {};
 
-        # # Disable tests which take around 1 hour!
-        # statistics = hlib.dontCheck old.statistics;
+    # # Disable tests which take around 1 hour!
+    # statistics = hlib.dontCheck old.statistics;
 
-        # async = hlib.dontCheck old.async;
+    # async = hlib.dontCheck old.async;
 
-        # Requires doctest which requires ghc-paths which doesn’t support Cabal 3.17 we have.
-        vector = hlib.dontCheck old.vector;
+    # Requires doctest which requires ghc-paths which doesn’t support Cabal 3.17 we have.
+    vector = hlib.dontCheck old.vector;
 
-        # Brings entropy 0.4.1.11 which doesn’t build with Cabal 3.17+
-        HTTP = hlib.dontCheck old.HTTP;
+    # Brings entropy 0.4.1.11 which doesn’t build with Cabal 3.17+
+    HTTP = hlib.dontCheck old.HTTP;
 
-        # # file-io = hlib.dontCheck old.file-io;
-        #
-        # uuid-types = hlib.doJailbreak old.uuid-types;
-        # strict = hlib.doJailbreak old.strict;
+    # # file-io = hlib.dontCheck old.file-io;
+    #
+    # uuid-types = hlib.doJailbreak old.uuid-types;
+    # strict = hlib.doJailbreak old.strict;
 
-        semaphore-compat = hlib.dontCheck
-          (old.callHackageDirect
-            {
-              pkg    = "semaphore-compat";
-              ver    = "2.0.0";
-              sha256 = "sha256-s7SAtaEFR+QJ9ZeWn/0k/qq5PgwU1BsiSu/HUoDrQBo="; #pkgs.lib.fakeSha256;
-            }
-            {});
+    semaphore-compat = hlib.dontCheck
+      (old.callHackageDirect
+        {
+          pkg    = "semaphore-compat";
+          ver    = "2.0.0";
+          sha256 = "sha256-s7SAtaEFR+QJ9ZeWn/0k/qq5PgwU1BsiSu/HUoDrQBo="; #pkgs.lib.fakeSha256;
+        }
+        {});
 
-        process = hlib.dontCheck
-          (old.callHackageDirect
-            {
-              pkg    = "process";
-              ver    = "1.6.28.0";
-              sha256 = "sha256-VDQm3JL7gcFMpdE5E+j4nmV/YuYbp7D60DGiRCrgVbs="; #pkgs.lib.fakeSha256;
-            }
-            {});
+    process = hlib.dontCheck
+      (old.callHackageDirect
+        {
+          pkg    = "process";
+          ver    = "1.6.28.0";
+          sha256 = "sha256-VDQm3JL7gcFMpdE5E+j4nmV/YuYbp7D60DGiRCrgVbs="; #pkgs.lib.fakeSha256;
+        }
+        {});
 
-        # unix = hlib.dontCheck
-        #   (old.callHackageDirect
-        #     {
-        #       pkg    = "unix";
-        #       ver    = "2.8.6.0";
-        #       sha256 = "sha256-Tnkda3SJu5R2O9bYbrw+Fy/OQNxqOfWBP+Zv0jqDI6Q="; #pkgs.lib.fakeSha256;
-        #     }
-        #     {});
+    # unix = hlib.dontCheck
+    #   (old.callHackageDirect
+    #     {
+    #       pkg    = "unix";
+    #       ver    = "2.8.6.0";
+    #       sha256 = "sha256-Tnkda3SJu5R2O9bYbrw+Fy/OQNxqOfWBP+Zv0jqDI6Q="; #pkgs.lib.fakeSha256;
+    #     }
+    #     {});
 
-        # tasty = hlib.dontCheck
-        #   (old.callHackageDirect
-        #     {
-        #       pkg    = "tasty";
-        #       ver    = "1.5.2";
-        #       sha256 = "sha256-ikV62VQAAxsekESCxp7vldxopYiQGoYTCANsvGJlGcs="; #pkgs.lib.fakeSha256;
-        #     }
-        #     {});
+    # tasty = hlib.dontCheck
+    #   (old.callHackageDirect
+    #     {
+    #       pkg    = "tasty";
+    #       ver    = "1.5.2";
+    #       sha256 = "sha256-ikV62VQAAxsekESCxp7vldxopYiQGoYTCANsvGJlGcs="; #pkgs.lib.fakeSha256;
+    #     }
+    #     {});
 
-        # ghc-lib-parser = hlib.markBroken old.ghc-lib-parser;
-        # ghc-prof = hlib.doJailbreak old.ghc-prof;
+    # ghc-lib-parser = hlib.markBroken old.ghc-lib-parser;
+    # ghc-prof = hlib.doJailbreak old.ghc-prof;
 
-        # witherable = hlib.dontCheck
-        #   (old.callHackage "witherable" "0.5" {});
-        #
-        # process = hlib.dontCheck
-        #   (old.callHackage "process" "1.6.25.0" {});
-        #
-        # directory = hlib.dontCheck
-        #   (old.callHackage "directory" "1.3.9.0" {});
+    # witherable = hlib.dontCheck
+    #   (old.callHackage "witherable" "0.5" {});
+    #
+    # process = hlib.dontCheck
+    #   (old.callHackage "process" "1.6.25.0" {});
+    #
+    # directory = hlib.dontCheck
+    #   (old.callHackage "directory" "1.3.9.0" {});
 
-        # tar = hlib.doJailbreak old.tar;
-        # ed25519 = hlib.doJailbreak old.ed25519;
-        # indexed-traversable = hlib.doJailbreak old.indexed-traversable;
+    # tar = hlib.doJailbreak old.tar;
+    # ed25519 = hlib.doJailbreak old.ed25519;
+    # indexed-traversable = hlib.doJailbreak old.indexed-traversable;
 
-        # ed25519 = #hlib.dontCheck
-        #   (overrideCabal
-        #     "7"
-        #     "sha256-PbBNfBi55oul7vP6fuygXh4kiVjdGCKQyOawEMge9z4="
-        #     #"sha256-JKx7Xz2fo8L3AmKzKfKnXyTn/YKfiMGJs4jvobzWfrI="
-        #     (old.callHackageDirect {
-        #       pkg = "ed25519";
-        #       ver = "0.0.5.0";
-        #       sha256 = "sha256-x/8O0KFlj2SDVDKp3IPIvqklmZHfBYKGwygbG48q5Ig=";
-        #     }
-        #       {}));
-      }));
+    # ed25519 = #hlib.dontCheck
+    #   (overrideCabal
+    #     "7"
+    #     "sha256-PbBNfBi55oul7vP6fuygXh4kiVjdGCKQyOawEMge9z4="
+    #     #"sha256-JKx7Xz2fo8L3AmKzKfKnXyTn/YKfiMGJs4jvobzWfrI="
+    #     (old.callHackageDirect {
+    #       pkg = "ed25519";
+    #       ver = "0.0.5.0";
+    #       sha256 = "sha256-x/8O0KFlj2SDVDKp3IPIvqklmZHfBYKGwygbG48q5Ig=";
+    #     }
+    #       {}));
+  });
 
   hpkgsFastTags = hutils.fixedExtend hpkgs912 (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
