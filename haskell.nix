@@ -834,6 +834,8 @@ let
                 hutils.fixedExtend pkgs.haskell.packages.native-bignum.ghc9141 (new: old: {
                   ghc          = ghc-pkg;
                   mkDerivation = drv:
+                    # Important to keep changes to administractive packages like jailbreak-cabal
+                    # to a minimum.
                     if drv.pname == "jailbreak-cabal"
                     then old.mkDerivation drv
                     else
