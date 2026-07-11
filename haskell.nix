@@ -59,17 +59,6 @@ let
       editedCabalFile = editedSha;
     };
 
-  hashable-pkg = pkgs:
-    hlib.doJailbreak
-      (hlib.dontCheck
-        (pkgs.callHackageDirect
-          {
-            pkg    = "hashable";
-            ver    = "1.5.0.0";
-            sha256 = "sha256-IYAGl8K4Fo1DGSE2kok3HMtwUOJ/mwGHzVJfNYQTAsI="; #pkgs.lib.fakeSha256;
-          }
-          {}));
-
   allowGhcReference = x: hlib.overrideCabal x (drv: { disallowGhcReference = false; });
 
   hpkgsGhcEventsAnalyze = hutils.fixedExtend hpkgs96 (_: old:
@@ -252,47 +241,9 @@ let
     #       {}));
   });
 
-  hpkgsFastTags = hutils.fixedExtend hpkgs912 (_: old:
-    builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
-      fast-tags = hlib.dontCheck (old.callCabal2nix "fast-tags" fast-tags-repo {});
-
-      # Curse him who put os-string, a boot package, in the package set for
-      # 9.10.1!
-      #
-      # Having boot package in here, e.g. containers, will create conflicts
-      # when building packages that depend on it.
-      #
-      # Seriously, nix has pretty shitty parts and bullshit like
-      # this can kill a few hours of your life like it’s nothing.
-      #
-      # Nix is great when it works, but when it doesn’t it’s a miserable
-      # piece of <yeah, that thing> (this was an enormous letdown).
-      os-string            = null;
-
-      vector               = hlib.dontCheck old.vector;
-      async                = hlib.dontCheck old.async;
-      alex                 = hlib.dontCheck old.alex;
-      happy                = hlib.dontCheck old.happy;
-      code-page            = hlib.dontCheck old.code-page;
-      inspection-testing   = hlib.dontCheck old.inspection-testing;
-      call-stack           = hlib.dontCheck old.call-stack;
-      QuickCheck           = hlib.dontCheck old.QuickCheck;
-      silently             = hlib.dontCheck old.silently;
-      HUnit                = hlib.dontCheck old.HUnit;
-      optparse-applicative = hlib.dontCheck old.optparse-applicative;
-      hspec-expectations   = hlib.dontCheck old.hspec-expectations;
-      pcre-light           = hlib.dontCheck old.pcre-light;
-      # file-io              = hlib.dontCheck old.file-io;
-      syb                  = hlib.dontCheck old.syb;
-      hspec-discover       = hlib.dontCheck old.hspec-discover;
-      tasty-quickcheck     = hlib.dontCheck old.tasty-quickcheck;
-      stringbuilder        = hlib.dontCheck old.stringbuilder;
-      base-orphans         = hlib.dontCheck old.base-orphans;
-
-      hashable             = hashable-pkg old;
-
-      primitive            = hlib.dontCheck (old.callHackage "primitive" "0.9.0.0" {});
-    }));
+  hpkgsFastTags = hutils.fixedExtend hpkgs914 (_: old: {
+    fast-tags = hlib.dontCheck (old.callCabal2nix "fast-tags" fast-tags-repo {});
+  });
 
   # pkgs.haskell.packages.ghc961
   # args.pkgs.haskellPackages
