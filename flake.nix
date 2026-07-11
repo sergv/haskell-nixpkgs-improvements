@@ -210,6 +210,9 @@
     in {
 
       lib = {
+
+        make-haskell-utils = pkgs: mkHUtils pkgs;
+
         # Expects to receive packages with corresponding overlays in this flake applied.
         # Other overlays may be applied as well.
         derive-haskell-tools = system: vanilla-pkgs: cross-win-pkgs:
