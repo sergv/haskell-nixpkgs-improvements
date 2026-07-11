@@ -886,7 +886,7 @@ let
                       old.mkDerivation (drv // {
                         jailbreak = true;
                         # doHaddock = false;
-                        doCheck = drv.pname != "statistics";
+                        # doCheck = true;
                         # doBenchmark = false;
                         # doHoogle = true;
                         doHaddock = false;
@@ -905,7 +905,10 @@ let
                       })
                       {};
 
+                  # Broken with QuickCheck 2.18
                   dlist = hlib.dontCheck old.dlist;
+                  # Take too long
+                  statistics = hlib.dontCheck old.statistics;
 
                   QuickCheck =
                     hlib.dontCheck
