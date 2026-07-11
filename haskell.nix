@@ -893,6 +893,36 @@ let
                         enableLibraryProfiling = false;
                         # enableExecutableProfiling = false;
                       });
+
+                  enummapset =
+                    old.callCabal2nix
+                      "enummapset"
+                      (pkgs.fetchFromGitHub {
+                        owner  = "Mikolaj";
+                        repo   = "enummapset";
+                        rev    = "601e862fbf93cf03ed297016920fa0c0110a5e4c";
+                        sha256 = "sha256-H+sw32kl4AVJ7dTJkZpYt4Z4uXOgLWE3SoyxAAtiiAs="; #pkgs.lib.fakeSha256;
+                      })
+                      {};
+
+                  # integer-logarithms =
+                  #   (old.callHackageDirect {
+                  #     pkg    = "integer-logarithms";
+                  #     ver    = "1.0.5";
+                  #     sha256 = "sha256-fVcwxYyw7Ant0YfS2QrYb+lk6GhCSG1hYbar4TwBwnM="; #pkgs.lib.fakeSha256;
+                  #   }
+                  #     {});
+
+                  # algebraic-graphs =
+                  #   old.callCabal2nix
+                  #     "alga"
+                  #     (pkgs.fetchFromGitHub {
+                  #       owner  = "snowleopard";
+                  #       repo   = "alga";
+                  #       rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
+                  #       sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
+                  #     })
+                  #     {};
                 });
           in hutils.fixedExtend hpkgs (new: old: {
             buildHaskellPackages =
