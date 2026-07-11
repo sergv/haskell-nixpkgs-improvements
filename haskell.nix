@@ -905,6 +905,8 @@ let
                       })
                       {};
 
+                  dlist = hlib.dontCheck old.dlist;
+
                   QuickCheck =
                     hlib.dontCheck
                       (old.callHackage "QuickCheck" "2.18.0.0" {});
