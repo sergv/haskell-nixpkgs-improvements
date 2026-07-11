@@ -8,6 +8,15 @@ let # Disable profiling and haddock
          (hlib.disableExecutableProfiling x));
 
     makeHaskellPackageAttribSmaller = name: x:
+      onlyApplyToHaskellPackages makeHaskellPackageSmaller name x;
+
+    # Apply function f only to haskell packages. Designed to be mapped over whole
+    # haskell package set, e.g.
+    #
+    # > fixedExtend hpkgs (_: old:
+    # >   builtins.mapAttrs makeHaskellPackageAttribSmaller old
+    # > );
+    onlyApplyToHaskellPackages = f: name: x:
       if builtins.isNull x ||
         builtins.elem
           name
@@ -18,7 +27,7 @@ let # Disable profiling and haddock
       else
        # # If we missed something in the above check, uncomment this and see what’s being accessed
        # builtins.trace { inherit name; type = builtins.typeOf x; }
-       (makeHaskellPackageSmaller x);
+       f x;
 
     version-ge = to-check: target-version:
       builtins.compareVersions to-check target-version >= 0;
@@ -85,6 +94,7 @@ let # Disable profiling and haddock
 
 in {
   inherit makeHaskellPackageSmaller makeHaskellPackageAttribSmaller fixedExtend ghc-pkg-version-ge version-ge;
+  inherit onlyApplyToHaskellPackages;
 
   inherit enable-unit-ids-for-newer-ghc;
 
