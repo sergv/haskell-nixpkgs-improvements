@@ -886,32 +886,13 @@ let
                       old.mkDerivation (drv // {
                         jailbreak = true;
                         # doHaddock = false;
-                        doCheck = false;
+                        doCheck = drv.pname != "statistics";
                         # doBenchmark = false;
                         # doHoogle = true;
-                        # doHaddock = true;
-                        # enableLibraryProfiling = false;
+                        doHaddock = false;
+                        enableLibraryProfiling = false;
                         # enableExecutableProfiling = false;
                       });
-
-                  integer-logarithms =
-                    (old.callHackageDirect {
-                      pkg    = "integer-logarithms";
-                      ver    = "1.0.5";
-                      sha256 = "sha256-fVcwxYyw7Ant0YfS2QrYb+lk6GhCSG1hYbar4TwBwnM="; #pkgs.lib.fakeSha256;
-                    }
-                      {});
-
-                  algebraic-graphs =
-                    old.callCabal2nix
-                      "alga"
-                      (pkgs.fetchFromGitHub {
-                        owner  = "snowleopard";
-                        repo   = "alga";
-                        rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
-                        sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
-                      })
-                      {};
                 });
           in hutils.fixedExtend hpkgs (new: old: {
             buildHaskellPackages =
