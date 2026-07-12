@@ -790,7 +790,11 @@ let
             '';
         };
     in {
-      inherit ghc-win-wrapped ghc-pkg-win-wrapped hsc2hs-win-wrapped wine-run-haskell cabal-win-wrapped;
+      inherit wine-run-haskell;
+      ghc-win     = ghc-win-wrapped;
+      ghc-pkg-win = ghc-pkg-win-wrapped;
+      hsc2hs-win  = hsc2hs-win-wrapped;
+      cabal-win   = cabal-win-wrapped;
     };
 
   # Caused by process 1.6.30 tha conflicts with boot library but
