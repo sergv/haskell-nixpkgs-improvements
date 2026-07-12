@@ -46,12 +46,8 @@ let
   # Doesn’t work but could be cool: static executables
   # hpkgs948 = pkgs.pkgsStatic.haskell.packages.ghc945.override {
 
-  # hpkgs948 = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc948;
   hpkgs96 = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc96;
-  hpkgs910 = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc910;
   hpkgs912 = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc912;
-  hpkgs914 = haskell-package-sets.host.default;
-  # hpkgs981 = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc981;
 
   overrideCabal = revision: editedSha: pkg:
     hlib.overrideCabal pkg {
@@ -76,24 +72,7 @@ let
       brick = hlib.doJailbreak old.brick;
     }));
 
-  hpkgsEventlog2html = hutils.fixedExtend hpkgs914 (_: old: {
-
-    eventlog2html = hlib.doJailbreak (old.callCabal2nix "eventlog2html" eventlog2html-repo {});
-
-    # vector-binary-instances = hlib.doJailbreak old.vector-binary-instances;
-
-    # ghc-events = old.callHackage "ghc-events" "0.20.0.0" {};
-    # Disable tests which take around 1 hour!
-    # statistics = hlib.dontCheck old.statistics;
-  });
-
-  hpkgsProfiterole = hutils.fixedExtend hpkgs912 (final: old:
-    builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
-      ghc-prof = hlib.dontCheck old.ghc-prof;
-    }));
-
-  # pkgs.haskell.packages.ghc961
-  hpkgsCabal = hutils.fixedExtend hpkgs914 (new: old: {
+  hpkgsCabal = hutils.fixedExtend haskell-package-sets.host.default (new: old: {
     # ghc = hutils.smaller-ghc(old.ghc);
 
     # builtins.mapAttrs (_name: value: hlib.doJailbreak value) old //
@@ -231,10 +210,6 @@ let
     #       {}));
   });
 
-  hpkgsFastTags = hutils.fixedExtend hpkgs914 (_: old: {
-    fast-tags = hlib.dontCheck (old.callCabal2nix "fast-tags" fast-tags-repo {});
-  });
-
   # pkgs.haskell.packages.ghc961
   # args.pkgs.haskellPackages
   threadscopePkgs = hutils.fixedExtend pkgs.haskell.packages.ghc928 (_: old:
@@ -248,7 +223,7 @@ let
   #   pkgs.zlib
   # ];
 
-  relocatable-static-libs-ghc = ghc-pkg:
+  mk-relocatable-static-libs-ghc = ghc-pkg:
     ghc-pkg.override (_: {
       enableRelocatedStaticLibs = true;
     });
@@ -553,7 +528,7 @@ let
 
   # ghc-build-pkgs = pkgs.haskell.packages.native-bignum.ghc9101;
   # ghc-build-pkgs = hpkgsCabal;
-  ghc-build-pkgs = hpkgs910;
+  ghc-build-pkgs = hpkgs912;
   latest-ghc-pkg = pkgs.haskell.compiler.native-bignum.9141;
 
   ghc912-pkg = pkgs.haskell.compiler.native-bignum.ghc9124;
@@ -818,6 +793,11 @@ let
       inherit ghc-win-wrapped ghc-pkg-win-wrapped hsc2hs-win-wrapped wine-run-haskell cabal-win-wrapped;
     };
 
+  # Caused by process 1.6.30 tha conflicts with boot library but
+  # ultimately only affects tests that depend on ‘tasty-inspection-testing’
+  # or doctests (i.e. packages that involve ghc).
+  process-on-914-workaround = x: hlib.allowInconsistentDependencies x;
+
   haskell-package-sets =
     let mkGhc914Pkgs = ghc-pkg:
           let hpkgs =
@@ -865,7 +845,11 @@ let
                           (old.callHackage "QuickCheck" "2.18.0.0" {});
 
                       quickcheck-instances =
-                        (old.callHackage "quickcheck-instances" "0.4" {});
+                        old.callHackage "quickcheck-instances" "0.4" {};
+
+                      skeletest =
+                        process-on-914-workaround
+                          (old.callHackage "skeletest" "0.4.2" {});
 
                       process = hlib.dontCheck
                         (old.callHackageDirect
@@ -876,31 +860,47 @@ let
                           }
                           {});
 
-                      # Caused by process 1.6.30 tha conflicts with boot library but
-                      # ultimately only affects tests that depend on ‘tasty-inspection-testing’
-                      # or doctests (i.e. packages that involve ghc).
-                      vector = hlib.allowInconsistentDependencies old.vector;
-                      doctest = hlib.allowInconsistentDependencies old.doctest;
-                      tasty-inspection-testing = hlib.allowInconsistentDependencies old.tasty-inspection-testing;
+                      vector = process-on-914-workaround old.vector;
+                      tasty-inspection-testing = process-on-914-workaround old.tasty-inspection-testing;
+                      toml-reader = process-on-914-workaround old.toml-reader;
+                      doctest-parallel = process-on-914-workaround old.doctest-parallel;
+                      regex-tdfa = process-on-914-workaround old.regex-tdfa;
+                      weeder = process-on-914-workaround old.weeder;
 
-                      # integer-logarithms =
-                      #   (old.callHackageDirect {
-                      #     pkg    = "integer-logarithms";
-                      #     ver    = "1.0.5";
-                      #     sha256 = "sha256-fVcwxYyw7Ant0YfS2QrYb+lk6GhCSG1hYbar4TwBwnM="; #pkgs.lib.fakeSha256;
-                      #   }
-                      #     {});
+                      fast-tags =
+                        # hlib.dontCheck
+                          (old.callCabal2nix "fast-tags" fast-tags-repo {});
 
-                      # algebraic-graphs =
-                      #   old.callCabal2nix
-                      #     "alga"
-                      #     (pkgs.fetchFromGitHub {
-                      #       owner  = "snowleopard";
-                      #       repo   = "alga";
-                      #       rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
-                      #       sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
-                      #     })
-                      #     {};
+                      eventlog2html =
+                        hlib.doJailbreak
+                          (old.callCabal2nix "eventlog2html" eventlog2html-repo {});
+
+                      doctest =
+                        (x: hlib.dontCheck (process-on-914-workaround x))
+                          ((old.callCabal2nix "doctest" doctest-repo {}).overrideAttrs (oldAttrs: oldAttrs // {
+                            # buildInputs = [haskellPackages.GLFW-b];
+                            configureFlags = oldAttrs.configureFlags ++ [
+                              # cabal config passes RTS options to GHC so doctest will receive them too
+                              # ‘cabal repl --with-ghc=doctest’
+                              "--ghc-option=-rtsopts"
+                            ];
+                          }));
+
+                      # Tests don’t pass with ghc 9.14.
+                      ghc-prof = hlib.dontCheck old.ghc-prof;
+                      generic-lens = hlib.dontCheck old.generic-lens;
+
+                      algebraic-graphs =
+                        process-on-914-workaround
+                          (old.callCabal2nix
+                            "alga"
+                            (pkgs.fetchFromGitHub {
+                              owner  = "snowleopard";
+                              repo   = "alga";
+                              rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
+                              sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
+                            })
+                            {});
                     }));
           in
           hpkgs;
@@ -921,29 +921,9 @@ let
       host = rec {
         default    = ghc914;
         ghc914     = mkGhc914Pkgs ghc914-pkg;
-        ghc914-pie = mkGhc914Pkgs (relocatable-static-libs-ghc ghc914-pkg);
+        ghc914-pie = mkGhc914Pkgs (mk-relocatable-static-libs-ghc ghc914-pkg);
       };
     };
-
-  hpkgsDoctest = hutils.fixedExtend haskell-package-sets.host.default (_: old:
-    builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
-      doctest =
-        (x: hlib.dontCheck (hlib.allowInconsistentDependencies x))
-          ((old.callCabal2nix "doctest" doctest-repo {}).overrideAttrs (oldAttrs: oldAttrs // {
-            # buildInputs = [haskellPackages.GLFW-b];
-            configureFlags = oldAttrs.configureFlags ++ [
-              # cabal config passes RTS options to GHC so doctest will receive them too
-              # ‘cabal repl --with-ghc=doctest’
-              "--ghc-option=-rtsopts"
-            ];
-          }));
-
-      # primitive = hlib.dontCheck (old.callHackage "primitive" "0.8.0.0" {});
-      # tagged = old.callHackage "tagged" "0.8.7" {};
-      # size-based = hlib.doJailbreak old.size-based;
-      #
-      # syb = old.callHackage "syb" "0.7.2.3" {};
-    }));
 
 in {
 
@@ -1018,15 +998,15 @@ in {
   tools = {
     inherit cabal;
 
-    alex               = hlib.justStaticExecutables hpkgs914.alex;
-    happy              = hlib.justStaticExecutables hpkgs914.happy;
-    doctest            = allowGhcReference (hlib.justStaticExecutables hpkgsDoctest.doctest);
-    eventlog2html      = hlib.justStaticExecutables hpkgsEventlog2html.eventlog2html;
-    fast-tags          = hlib.justStaticExecutables hpkgsFastTags.fast-tags;
+    alex               = hlib.justStaticExecutables haskell-package-sets.host.default.alex;
+    happy              = hlib.justStaticExecutables haskell-package-sets.host.default.happy;
+    doctest            = allowGhcReference (hlib.justStaticExecutables haskell-package-sets.host.default.doctest);
+    eventlog2html      = hlib.justStaticExecutables haskell-package-sets.host.default.eventlog2html;
+    fast-tags          = hlib.justStaticExecutables haskell-package-sets.host.default.fast-tags;
     ghc-events-analyze = hlib.justStaticExecutables hpkgsGhcEventsAnalyze.ghc-events-analyze;
-    hp2pretty          = hlib.justStaticExecutables hpkgs914.hp2pretty;
-    pretty-show        = hlib.justStaticExecutables hpkgs914.pretty-show;
-    profiterole        = hlib.justStaticExecutables hpkgsProfiterole.profiterole;
+    hp2pretty          = hlib.justStaticExecutables haskell-package-sets.host.default.hp2pretty;
+    pretty-show        = hlib.justStaticExecutables haskell-package-sets.host.default.pretty-show;
+    profiterole        = hlib.justStaticExecutables haskell-package-sets.host.default.profiterole;
     weeder             = hlib.justStaticExecutables haskell-package-sets.host.default.weeder;
     # hspec-discover     = hlib.justStaticExecutables hpkgs96.hspec-discover;
     # threadscope        = threadscopePkgs.threadscope;
