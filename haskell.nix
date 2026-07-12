@@ -539,7 +539,7 @@ let
                   builtins.mapAttrs
                     (name: x: x)
                     # (hutils.onlyApplyToHaskellPackages hlib.allowInconsistentDependencies)
-                    (old // {
+                    (/* old // */ {
                       ghc          = ghc-pkg;
                       mkDerivation = drv:
                         # Important to keep changes to administractive packages like jailbreak-cabal
