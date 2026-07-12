@@ -533,111 +533,113 @@ let
   process-on-914-workaround = x: hlib.allowInconsistentDependencies x;
 
   haskell-package-sets =
-    let mkGhc914Pkgs = ghc-pkg:
-          let hpkgs =
-                hutils.fixedExtend pkgs.haskell.packages.native-bignum.ghc9141 (new: old:
-                  builtins.mapAttrs
-                    (name: x: x)
-                    # (hutils.onlyApplyToHaskellPackages hlib.allowInconsistentDependencies)
-                    (/* old // */ {
-                      ghc          = ghc-pkg;
-                      mkDerivation = drv:
-                        # Important to keep changes to administractive packages like jailbreak-cabal
-                        # to a minimum.
-                        if drv.pname == "jailbreak-cabal"
-                        then old.mkDerivation drv
-                        else
-                          old.mkDerivation (drv // {
-                            jailbreak = true;
-                            # doHaddock = false;
-                            # doCheck = true;
-                            # doBenchmark = false;
-                            # doHoogle = true;
-                            doHaddock = false;
-                            enableLibraryProfiling = false;
-                            # enableExecutableProfiling = false;
-                          });
+    let
+      mkGhc914Pkgs = ghc-pkg:
+        let
+          hpkgs =
+            hutils.fixedExtend pkgs.haskell.packages.native-bignum.ghc9141 (new: old:
+              builtins.mapAttrs
+                (name: x: x)
+                # (hutils.onlyApplyToHaskellPackages hlib.allowInconsistentDependencies)
+                (/* old // */ {
+                  ghc          = ghc-pkg;
+                  mkDerivation = drv:
+                    # Important to keep changes to administractive packages like jailbreak-cabal
+                    # to a minimum.
+                    if drv.pname == "jailbreak-cabal"
+                    then old.mkDerivation drv
+                    else
+                      old.mkDerivation (drv // {
+                        jailbreak = true;
+                        # doHaddock = false;
+                        # doCheck = true;
+                        # doBenchmark = false;
+                        # doHoogle = true;
+                        doHaddock = false;
+                        enableLibraryProfiling = false;
+                        # enableExecutableProfiling = false;
+                      });
 
-                      enummapset =
-                        old.callCabal2nix
-                          "enummapset"
-                          (pkgs.fetchFromGitHub {
-                            owner  = "Mikolaj";
-                            repo   = "enummapset";
-                            rev    = "601e862fbf93cf03ed297016920fa0c0110a5e4c";
-                            sha256 = "sha256-H+sw32kl4AVJ7dTJkZpYt4Z4uXOgLWE3SoyxAAtiiAs="; #pkgs.lib.fakeSha256;
-                          })
-                          {};
+                  enummapset =
+                    old.callCabal2nix
+                      "enummapset"
+                      (pkgs.fetchFromGitHub {
+                        owner  = "Mikolaj";
+                        repo   = "enummapset";
+                        rev    = "601e862fbf93cf03ed297016920fa0c0110a5e4c";
+                        sha256 = "sha256-H+sw32kl4AVJ7dTJkZpYt4Z4uXOgLWE3SoyxAAtiiAs="; #pkgs.lib.fakeSha256;
+                      })
+                      {};
 
-                      # Broken with QuickCheck 2.18
-                      dlist = hlib.dontCheck old.dlist;
-                      # Take too long
-                      statistics = hlib.dontCheck old.statistics;
+                  # Broken with QuickCheck 2.18
+                  dlist = hlib.dontCheck old.dlist;
+                  # Take too long
+                  statistics = hlib.dontCheck old.statistics;
 
-                      QuickCheck =
-                        hlib.dontCheck
-                          (old.callHackage "QuickCheck" "2.18.0.0" {});
+                  QuickCheck =
+                    hlib.dontCheck
+                      (old.callHackage "QuickCheck" "2.18.0.0" {});
 
-                      quickcheck-instances =
-                        old.callHackage "quickcheck-instances" "0.4" {};
+                  quickcheck-instances =
+                    old.callHackage "quickcheck-instances" "0.4" {};
 
-                      skeletest =
-                        process-on-914-workaround
-                          (old.callHackage "skeletest" "0.4.2" {});
+                  skeletest =
+                    process-on-914-workaround
+                      (old.callHackage "skeletest" "0.4.2" {});
 
-                      process = hlib.dontCheck
-                        (old.callHackageDirect
-                          {
-                            pkg    = "process";
-                            ver    = "1.6.30.0";
-                            sha256 = "sha256-grK+qHD8wGYaHMd1a0KwsJyzml1XeXnz/1pPNg7p3aA="; #pkgs.lib.fakeSha256;
-                          }
-                          {});
+                  process = hlib.dontCheck
+                    (old.callHackageDirect
+                      {
+                        pkg    = "process";
+                        ver    = "1.6.30.0";
+                        sha256 = "sha256-grK+qHD8wGYaHMd1a0KwsJyzml1XeXnz/1pPNg7p3aA="; #pkgs.lib.fakeSha256;
+                      }
+                      {});
 
-                      vector = process-on-914-workaround old.vector;
-                      tasty-inspection-testing = process-on-914-workaround old.tasty-inspection-testing;
-                      toml-reader = process-on-914-workaround old.toml-reader;
-                      doctest-parallel = process-on-914-workaround old.doctest-parallel;
-                      regex-tdfa = process-on-914-workaround old.regex-tdfa;
-                      weeder = process-on-914-workaround old.weeder;
+                  vector = process-on-914-workaround old.vector;
+                  tasty-inspection-testing = process-on-914-workaround old.tasty-inspection-testing;
+                  toml-reader = process-on-914-workaround old.toml-reader;
+                  doctest-parallel = process-on-914-workaround old.doctest-parallel;
+                  regex-tdfa = process-on-914-workaround old.regex-tdfa;
+                  weeder = process-on-914-workaround old.weeder;
 
-                      fast-tags =
-                        # hlib.dontCheck
-                          (old.callCabal2nix "fast-tags" fast-tags-repo {});
+                  fast-tags =
+                    # hlib.dontCheck
+                    (old.callCabal2nix "fast-tags" fast-tags-repo {});
 
-                      eventlog2html =
-                        hlib.doJailbreak
-                          (old.callCabal2nix "eventlog2html" eventlog2html-repo {});
+                  eventlog2html =
+                    hlib.doJailbreak
+                      (old.callCabal2nix "eventlog2html" eventlog2html-repo {});
 
-                      doctest =
-                        (x: hlib.dontCheck (process-on-914-workaround x))
-                          ((old.callCabal2nix "doctest" doctest-repo {}).overrideAttrs (oldAttrs: oldAttrs // {
-                            # buildInputs = [haskellPackages.GLFW-b];
-                            configureFlags = oldAttrs.configureFlags ++ [
-                              # cabal config passes RTS options to GHC so doctest will receive them too
-                              # ‘cabal repl --with-ghc=doctest’
-                              "--ghc-option=-rtsopts"
-                            ];
-                          }));
+                  doctest =
+                    (x: hlib.dontCheck (process-on-914-workaround x))
+                      ((old.callCabal2nix "doctest" doctest-repo {}).overrideAttrs (oldAttrs: oldAttrs // {
+                        # buildInputs = [haskellPackages.GLFW-b];
+                        configureFlags = oldAttrs.configureFlags ++ [
+                          # cabal config passes RTS options to GHC so doctest will receive them too
+                          # ‘cabal repl --with-ghc=doctest’
+                          "--ghc-option=-rtsopts"
+                        ];
+                      }));
 
-                      # Tests don’t pass with ghc 9.14.
-                      ghc-prof = hlib.dontCheck old.ghc-prof;
-                      generic-lens = hlib.dontCheck old.generic-lens;
+                  # Tests don’t pass with ghc 9.14.
+                  ghc-prof = hlib.dontCheck old.ghc-prof;
+                  generic-lens = hlib.dontCheck old.generic-lens;
 
-                      algebraic-graphs =
-                        process-on-914-workaround
-                          (old.callCabal2nix
-                            "alga"
-                            (pkgs.fetchFromGitHub {
-                              owner  = "snowleopard";
-                              repo   = "alga";
-                              rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
-                              sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
-                            })
-                            {});
-                    }));
-          in
-          hpkgs;
+                  algebraic-graphs =
+                    process-on-914-workaround
+                      (old.callCabal2nix
+                        "alga"
+                        (pkgs.fetchFromGitHub {
+                          owner  = "snowleopard";
+                          repo   = "alga";
+                          rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
+                          sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
+                        })
+                        {});
+                }));
+        in
+        hpkgs;
           # Not needed any more.
           #   hutils.fixedExtend hpkgs (new: old: {
           #   buildHaskellPackages =
