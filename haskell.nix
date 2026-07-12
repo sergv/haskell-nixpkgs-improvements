@@ -639,19 +639,22 @@ let
                         {});
                 }));
         in
-        hpkgs;
+        # hpkgs;
           # Not needed any more.
-          #   hutils.fixedExtend hpkgs (new: old: {
-          #   buildHaskellPackages =
-          #     hutils.fixedExtend hpkgs
-          #       # hutils.fixedExtend old.buildHaskellPackages
-          #       (_new2: _old2: {
-          #         # Override build tools used by Haskell mkDerivation to
-          #         # avoid references to ghcHEAD compiler.
-          #         hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
-          #         jailbreak-cabal = new.jailbreak-cabal; #pkgs.haskell.packages.native-bignum.ghc912.jailbreak-cabal;
-          #       });
-          # });
+        hutils.fixedExtend hpkgs (new: old: {
+          buildHaskellPackages =
+            hutils.fixedExtend old.buildHaskellPackages (new2: old2: {
+              ghc = ghc-pkg;
+            });
+            # hutils.fixedExtend hpkgs
+            #   # hutils.fixedExtend old.buildHaskellPackages
+            #   (_new2: _old2: {
+            #     # Override build tools used by Haskell mkDerivation to
+            #     # avoid references to ghcHEAD compiler.
+            #     hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
+            #     jailbreak-cabal = new.jailbreak-cabal; #pkgs.haskell.packages.native-bignum.ghc912.jailbreak-cabal;
+            #   });
+        });
 
     in {
       host = rec {
