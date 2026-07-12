@@ -928,14 +928,15 @@ let
   hpkgsDoctest = hutils.fixedExtend haskell-package-sets.host.default (_: old:
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       doctest =
-        hlib.dontCheck ((old.callCabal2nix "doctest" doctest-repo {}).overrideAttrs (oldAttrs: oldAttrs // {
-          # buildInputs = [haskellPackages.GLFW-b];
-          configureFlags = oldAttrs.configureFlags ++ [
-            # cabal config passes RTS options to GHC so doctest will receive them too
-            # ‘cabal repl --with-ghc=doctest’
-            "--ghc-option=-rtsopts"
-          ];
-        }));
+        (x: hlib.dontCheck (hlib.allowInconsistentDependencies x))
+          ((old.callCabal2nix "doctest" doctest-repo {}).overrideAttrs (oldAttrs: oldAttrs // {
+            # buildInputs = [haskellPackages.GLFW-b];
+            configureFlags = oldAttrs.configureFlags ++ [
+              # cabal config passes RTS options to GHC so doctest will receive them too
+              # ‘cabal repl --with-ghc=doctest’
+              "--ghc-option=-rtsopts"
+            ];
+          }));
 
       # primitive = hlib.dontCheck (old.callHackage "primitive" "0.8.0.0" {});
       # tagged = old.callHackage "tagged" "0.8.7" {};
@@ -1017,14 +1018,14 @@ in {
   tools = {
     inherit cabal;
 
-    alex               = hlib.justStaticExecutables hpkgs912.alex;
-    happy              = hlib.justStaticExecutables hpkgs912.happy;
+    alex               = hlib.justStaticExecutables hpkgs914.alex;
+    happy              = hlib.justStaticExecutables hpkgs914.happy;
     doctest            = allowGhcReference (hlib.justStaticExecutables hpkgsDoctest.doctest);
     eventlog2html      = hlib.justStaticExecutables hpkgsEventlog2html.eventlog2html;
     fast-tags          = hlib.justStaticExecutables hpkgsFastTags.fast-tags;
     ghc-events-analyze = hlib.justStaticExecutables hpkgsGhcEventsAnalyze.ghc-events-analyze;
-    hp2pretty          = hlib.justStaticExecutables hpkgs912.hp2pretty;
-    pretty-show        = hlib.justStaticExecutables hpkgs912.pretty-show;
+    hp2pretty          = hlib.justStaticExecutables hpkgs914.hp2pretty;
+    pretty-show        = hlib.justStaticExecutables hpkgs914.pretty-show;
     profiterole        = hlib.justStaticExecutables hpkgsProfiterole.profiterole;
     weeder             = hlib.justStaticExecutables haskell-package-sets.host.default.weeder;
     # hspec-discover     = hlib.justStaticExecutables hpkgs96.hspec-discover;
