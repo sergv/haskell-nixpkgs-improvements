@@ -30,6 +30,13 @@ let
     sha256 = "sha256-8QH3p2dQYNd0g0YKgtrRLrYPNLcE8YqIA7pLVXmJ6PI="; #pkgs.lib.fakeSha256;
   };
 
+  faster-richer-tags-repo = pkgs.fetchFromGitHub {
+    owner  = "sergv";
+    repo   = "faster-richer-tags";
+    rev    = "b0b1e3c007781d640e30b8c709bdb487d69c0a51";
+    sha256 = "sha256-cG9f8I7ipALIwoa5xSJjREkPZv9oIdSr+vn568li3Xc="; #pkgs.lib.fakeSha256;
+  };
+
   eventlog2html-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "eventlog2html";
@@ -596,6 +603,24 @@ let
                       }
                       {});
 
+                  alfred-margaret =
+                    old.callHackageDirect
+                      {
+                        pkg    = "alfred-margaret";
+                        ver    = "2.1.1.1";
+                        sha256 = "sha256-dVU9GUnVqwQQPoucQ51aX22QkX1kX1DE+1d3/UOHLCI="; #pkgs.lib.fakeSha256;
+                      }
+                      {};
+
+                  prettyprinter-combinators =
+                    old.callHackageDirect
+                      {
+                        pkg    = "prettyprinter-combinators";
+                        ver    = "0.1.4";
+                        sha256 = "sha256-axNM4gwijzvvwxMhM/D4v8bABHzTBfweLGeQJgNgYNk="; #pkgs.lib.fakeSha256;
+                      }
+                      {};
+
                   vector = process-on-914-workaround old.vector;
                   tasty-inspection-testing = process-on-914-workaround old.tasty-inspection-testing;
                   toml-reader = process-on-914-workaround old.toml-reader;
@@ -606,6 +631,10 @@ let
                   fast-tags =
                     # hlib.dontCheck
                     (old.callCabal2nix "fast-tags" fast-tags-repo {});
+
+                  faster-richer-tags =
+                    hlib.dontJailbreak
+                    (old.callCabal2nix "faster-richer-tags" faster-richer-tags-repo {});
 
                   eventlog2html =
                     hlib.doJailbreak
@@ -745,6 +774,7 @@ in {
     doctest            = allowGhcReference (hlib.justStaticExecutables haskell-package-sets.host.default.doctest);
     eventlog2html      = hlib.justStaticExecutables haskell-package-sets.host.default.eventlog2html;
     fast-tags          = hlib.justStaticExecutables haskell-package-sets.host.default.fast-tags;
+    faster-richer-tags = hlib.justStaticExecutables haskell-package-sets.host.default.faster-richer-tags;
     ghc-events-analyze = hlib.justStaticExecutables hpkgsGhcEventsAnalyze.ghc-events-analyze;
     hp2pretty          = hlib.justStaticExecutables haskell-package-sets.host.default.hp2pretty;
     pretty-show        = hlib.justStaticExecutables haskell-package-sets.host.default.pretty-show;
