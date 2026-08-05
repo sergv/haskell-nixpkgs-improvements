@@ -195,7 +195,7 @@
         # the linking will fail.
         use-win32-thread-model-overlay = final: prev: {
           threadsCross = {
-            model = "win32";
+            model   = "win32";
             package = null;
           };
         };
@@ -274,7 +274,7 @@
       };
 
       overlays = {
-        host = host-overlay;
+        host      = host-overlay;
         cross-win =
           nixpkgs.lib.composeManyExtensions [
             use-win32-thread-model-overlay
