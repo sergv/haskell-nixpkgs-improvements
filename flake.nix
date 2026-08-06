@@ -211,11 +211,15 @@
 
       lib = {
 
-        make-haskell-utils = pkgs: mkHUtils pkgs;
+        mk-haskell-utils = pkgs: mkHUtils pkgs;
 
         # Expects to receive packages with corresponding overlays in this flake applied.
         # Other overlays may be applied as well.
-        derive-haskell-tools = system: vanilla-pkgs: cross-win-pkgs:
+        mk-haskell-tools =
+          { system,
+            vanilla-pkgs,
+            cross-win-pkgs ? null
+          }:
 
           # nixpkgs-18-09 = builtins.fetchTarball {
           #   url    = "https://github.com/NixOS/nixpkgs/archive/a7e559a5504572008567383c3dc8e142fa7a8633.tar.gz";
@@ -290,8 +294,11 @@
           #   config = self.config.host;
           #   overlays = [ self.overlays.host ];
           # };
-          pkgs = nixpkgs.legacyPackages."${system}";
-          derived = self.lib.derive-haskell-tools system pkgs null;
+          pkgs    = nixpkgs.legacyPackages."${system}";
+          derived = self.lib.mk-haskell-tools {
+            inherit system;
+            vanilla-pkgs = pkgs;
+          };
         in
         pkgs.lib.attrsets.unionOfDisjoint
           derived.ghc.host
@@ -305,8 +312,11 @@
           #   config = self.config.host;
           #   overlays = [ self.overlays.host ];
           # };
-          pkgs = nixpkgs.legacyPackages."${system}";
-          derived = self.lib.derive-haskell-tools system pkgs null;
+          pkgs    = nixpkgs.legacyPackages."${system}";
+          derived = self.lib.mk-haskell-tools {
+            inherit system;
+            vanilla-pkgs = pkgs;
+          };
         in
         derived.haskell-package-sets
       );
