@@ -92,11 +92,54 @@ let # Disable profiling and haddock
         overrides = lib.composeExtensions (old.overrides or (_: _: {})) f;
       });
 
+    premap-hpkgs-mk-derivation = f: package-set:
+      fixedExtend
+        package-set
+        (
+          new:
+          old:
+          {
+            mkDerivation = args: old.mkDerivation
+              (if args.pname == "jailbreak-cabal"
+               then
+                 # Important to keep changes to administractive packages
+                 # like jailbreak-cabal to a minimum.
+                 args
+               else (f args));
+          })
+      // {
+        overrideScope =
+          scope: premap-hpkgs-mk-derivation f (package-set.overrideScope scope);
+      };
+
+    # e.g.
+    # enable-hpkgs-debugging pkgs.haskell.packages.native-bignum.ghc9141
+    # enable-hpkgs-debugging derived-haskell-tools.haskell-package-sets.host.ghc914-pie
+    enable-hpkgs-debugging =
+      premap-hpkgs-mk-derivation
+        (args: args // {
+          configureFlags = (args.configureFlags or []) ++
+            [
+              "--ghc-option=-g"
+              "--disable-executable-stripping"
+              "--disable-library-stripping"
+            ];
+          dontStrip = true;
+        });
+
+    enable-hpkgs-PIC =
+      premap-hpkgs-mk-derivation
+        (args: args // {
+          configureFlags = (args.configureFlags or []) ++ ["--ghc-option=-fPIC"];
+        });
+
 in {
   inherit makeHaskellPackageSmaller makeHaskellPackageAttribSmaller fixedExtend ghc-pkg-version-ge version-ge;
   inherit onlyApplyToHaskellPackages;
 
   inherit enable-unit-ids-for-newer-ghc;
+
+  inherit premap-hpkgs-mk-derivation enable-hpkgs-debugging enable-hpkgs-PIC;
 
   smaller-hpkgs-no-ghc = hpkgs:
     fixedExtend hpkgs (_: old:

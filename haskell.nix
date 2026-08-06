@@ -543,29 +543,26 @@ let
     let
       mkGhc914Pkgs = ghc-pkg:
         let
+          hpkgs-base =
+            hutils.premap-hpkgs-mk-derivation
+              (args: args // {
+                jailbreak = true;
+                # doHaddock = false;
+                # doCheck = true;
+                # doBenchmark = false;
+                # doHoogle = true;
+                doHaddock = false;
+                enableLibraryProfiling = false;
+                # enableExecutableProfiling = false;
+              })
+              pkgs.haskell.packages.native-bignum.ghc9141;
           hpkgs =
-            hutils.fixedExtend pkgs.haskell.packages.native-bignum.ghc9141 (new: old:
+            hutils.fixedExtend hpkgs-base (new: old:
               builtins.mapAttrs
                 (name: x: x)
                 # (hutils.onlyApplyToHaskellPackages hlib.allowInconsistentDependencies)
                 (/* old // */ {
-                  ghc          = ghc-pkg;
-                  mkDerivation = drv:
-                    # Important to keep changes to administractive packages like jailbreak-cabal
-                    # to a minimum.
-                    if drv.pname == "jailbreak-cabal"
-                    then old.mkDerivation drv
-                    else
-                      old.mkDerivation (drv // {
-                        jailbreak = true;
-                        # doHaddock = false;
-                        # doCheck = true;
-                        # doBenchmark = false;
-                        # doHoogle = true;
-                        doHaddock = false;
-                        enableLibraryProfiling = false;
-                        # enableExecutableProfiling = false;
-                      });
+                  ghc = ghc-pkg;
 
                   enummapset =
                     old.callCabal2nix
@@ -668,21 +665,20 @@ let
                         {});
                 }));
         in
-        # hpkgs;
-          # Not needed any more.
         hutils.fixedExtend hpkgs (new: old: {
           buildHaskellPackages =
             hutils.fixedExtend old.buildHaskellPackages (new2: old2: {
+              # Without this tools will be built with old ghc derivation package.
               ghc = ghc-pkg;
             });
-            # hutils.fixedExtend hpkgs
-            #   # hutils.fixedExtend old.buildHaskellPackages
-            #   (_new2: _old2: {
-            #     # Override build tools used by Haskell mkDerivation to
-            #     # avoid references to ghcHEAD compiler.
-            #     hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
-            #     jailbreak-cabal = new.jailbreak-cabal; #pkgs.haskell.packages.native-bignum.ghc912.jailbreak-cabal;
-            #   });
+          # Not needed any more.
+          # hutils.fixedExtend old.buildHaskellPackages
+          # (_new2: _old2: {
+          #   # Override build tools used by Haskell mkDerivation to
+          #   # avoid references to ghcHEAD compiler.
+          #   hscolour        = new.hscolour; #pkgs.haskell.packages.native-bignum.ghc912.hscolour;
+          #   jailbreak-cabal = new.jailbreak-cabal; #pkgs.haskell.packages.native-bignum.ghc912.jailbreak-cabal;
+          # });
         });
 
     in {
