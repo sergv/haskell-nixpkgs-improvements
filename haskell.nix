@@ -68,6 +68,8 @@ let
     builtins.mapAttrs hutils.makeHaskellPackageAttribSmaller (old // {
       # ghc-events-analyze = old.callHackage "ghc-events-analyze" "0.2.9" {};
       ghc-events-analyze =
+        # version alone is not enough to distinguish working package here
+        # warn-on-stale-override old
         hlib.doJailbreak
           (old.callHackageDirect
             {
@@ -539,6 +541,20 @@ let
   # or doctests (i.e. packages that involve ghc).
   process-on-914-workaround = x: hlib.allowInconsistentDependencies x;
 
+  warn-on-stale-override = old: new-pkg:
+    let
+      pkg-name    = new-pkg.pname;
+      new-version = new-pkg.version;
+      noOverride  =
+        builtins.hasAttr pkg-name old &&
+        old."${pkg-name}" != null &&
+        lib.versionAtLeast old."${pkg-name}".version new-version;
+    in
+    lib.warnIf
+      noOverride
+      "${pkg-name} >= ${new-version} is now in nixpkgs, the override is no longer needed"
+      (if noOverride then old."${pkg-name}" else new-pkg);
+
   haskell-package-sets =
     let
       mkGhc914Pkgs = ghc-pkg:
@@ -559,21 +575,23 @@ let
           hpkgs =
             hutils.fixedExtend hpkgs-base (new: old:
               builtins.mapAttrs
-                (name: x: x)
+                (_name: x: x)
                 # (hutils.onlyApplyToHaskellPackages hlib.allowInconsistentDependencies)
                 (/* old // */ {
                   ghc = ghc-pkg;
 
                   enummapset =
-                    old.callCabal2nix
-                      "enummapset"
-                      (pkgs.fetchFromGitHub {
-                        owner  = "Mikolaj";
-                        repo   = "enummapset";
-                        rev    = "601e862fbf93cf03ed297016920fa0c0110a5e4c";
-                        sha256 = "sha256-H+sw32kl4AVJ7dTJkZpYt4Z4uXOgLWE3SoyxAAtiiAs="; #pkgs.lib.fakeSha256;
-                      })
-                      {};
+                    # version alone is not enough to distinguish working package here
+                    # warn-on-stale-override old
+                      (old.callCabal2nix
+                        "enummapset"
+                        (pkgs.fetchFromGitHub {
+                          owner  = "Mikolaj";
+                          repo   = "enummapset";
+                          rev    = "601e862fbf93cf03ed297016920fa0c0110a5e4c";
+                          sha256 = "sha256-H+sw32kl4AVJ7dTJkZpYt4Z4uXOgLWE3SoyxAAtiiAs="; #pkgs.lib.fakeSha256;
+                        })
+                        {});
 
                   # Broken with QuickCheck 2.18
                   dlist = hlib.dontCheck old.dlist;
@@ -581,42 +599,49 @@ let
                   statistics = hlib.dontCheck old.statistics;
 
                   QuickCheck =
-                    hlib.dontCheck
-                      (old.callHackage "QuickCheck" "2.18.0.0" {});
+                    warn-on-stale-override old
+                      (hlib.dontCheck
+                        (old.callHackage "QuickCheck" "2.18.0.0" {}));
 
                   quickcheck-instances =
-                    old.callHackage "quickcheck-instances" "0.4" {};
+                    warn-on-stale-override old
+                      (old.callHackage "quickcheck-instances" "0.4" {});
 
                   skeletest =
-                    process-on-914-workaround
-                      (old.callHackage "skeletest" "0.4.2" {});
+                    warn-on-stale-override old
+                      (process-on-914-workaround
+                        (old.callHackage "skeletest" "0.4.2" {}));
 
-                  process = hlib.dontCheck
-                    (old.callHackageDirect
-                      {
-                        pkg    = "process";
-                        ver    = "1.6.30.0";
-                        sha256 = "sha256-grK+qHD8wGYaHMd1a0KwsJyzml1XeXnz/1pPNg7p3aA="; #pkgs.lib.fakeSha256;
-                      }
-                      {});
+                  process =
+                    warn-on-stale-override old
+                      (hlib.dontCheck
+                        (old.callHackageDirect
+                          {
+                            pkg    = "process";
+                            ver    = "1.6.30.0";
+                            sha256 = "sha256-grK+qHD8wGYaHMd1a0KwsJyzml1XeXnz/1pPNg7p3aA="; #pkgs.lib.fakeSha256;
+                          }
+                          {}));
 
                   alfred-margaret =
-                    old.callHackageDirect
-                      {
-                        pkg    = "alfred-margaret";
-                        ver    = "2.1.1.1";
-                        sha256 = "sha256-dVU9GUnVqwQQPoucQ51aX22QkX1kX1DE+1d3/UOHLCI="; #pkgs.lib.fakeSha256;
-                      }
-                      {};
+                    warn-on-stale-override old
+                      (old.callHackageDirect
+                        {
+                          pkg    = "alfred-margaret";
+                          ver    = "2.1.1.1";
+                          sha256 = "sha256-dVU9GUnVqwQQPoucQ51aX22QkX1kX1DE+1d3/UOHLCI="; #pkgs.lib.fakeSha256;
+                        }
+                        {});
 
                   prettyprinter-combinators =
-                    old.callHackageDirect
-                      {
-                        pkg    = "prettyprinter-combinators";
-                        ver    = "0.1.4";
-                        sha256 = "sha256-axNM4gwijzvvwxMhM/D4v8bABHzTBfweLGeQJgNgYNk="; #pkgs.lib.fakeSha256;
-                      }
-                      {};
+                    warn-on-stale-override old
+                      (old.callHackageDirect
+                        {
+                          pkg    = "prettyprinter-combinators";
+                          ver    = "0.1.4";
+                          sha256 = "sha256-axNM4gwijzvvwxMhM/D4v8bABHzTBfweLGeQJgNgYNk="; #pkgs.lib.fakeSha256;
+                        }
+                        {});
 
                   vector = process-on-914-workaround old.vector;
                   tasty-inspection-testing = process-on-914-workaround old.tasty-inspection-testing;
@@ -631,7 +656,7 @@ let
 
                   faster-richer-tags =
                     hlib.dontJailbreak
-                    (old.callCabal2nix "faster-richer-tags" faster-richer-tags-repo {});
+                      (old.callCabal2nix "faster-richer-tags" faster-richer-tags-repo {});
 
                   eventlog2html =
                     hlib.doJailbreak
@@ -653,16 +678,17 @@ let
                   generic-lens = hlib.dontCheck old.generic-lens;
 
                   algebraic-graphs =
-                    process-on-914-workaround
-                      (old.callCabal2nix
-                        "alga"
-                        (pkgs.fetchFromGitHub {
-                          owner  = "snowleopard";
-                          repo   = "alga";
-                          rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
-                          sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
-                        })
-                        {});
+                    warn-on-stale-override old
+                      (process-on-914-workaround
+                        (old.callCabal2nix
+                          "alga"
+                          (pkgs.fetchFromGitHub {
+                            owner  = "snowleopard";
+                            repo   = "alga";
+                            rev    = "d4e43fb42db05413459fb2df493361d5a666588a";
+                            sha256 = "sha256-sQRAjHV+bor/SBt/zDtcw3tN1ir7xjjevEdyYqilNWg="; #pkgs.lib.fakeSha256;
+                          })
+                          {}));
                 }));
         in
         hutils.fixedExtend hpkgs (new: old: {
