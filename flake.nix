@@ -260,8 +260,6 @@
           import ./haskell.nix {
             inherit pinned-pkgs;
             hutils         = mkHUtils vanilla-pkgs;
-            hlib           = vanilla-pkgs.haskell.lib;
-            lib            = vanilla-pkgs.lib;
             pkgs           = vanilla-pkgs;
             pkgs-cross-win = cross-win-pkgs;
             is-32-bits     = system == "i686-linux";

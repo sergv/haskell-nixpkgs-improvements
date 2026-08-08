@@ -2,13 +2,14 @@
 , pkgs-cross-win
 , pinned-pkgs
 
-, lib
-, hlib
 , hutils
 , is-32-bits
 }:
 
 let
+  hlib = pkgs.haskell.lib;
+  lib  = pkgs.lib;
+
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
@@ -416,7 +417,7 @@ let
       postUnpack            = ''sourceRoot="$sourceRoot/libraries/ghc-platform"'';
       libraryHaskellDepends = [base];
       description           = "Platform information used by GHC and friends";
-      license               = lib.licenses.bsd3;
+      license               = pkgs.lib.licenses.bsd3;
     };
 
   ghc-toolchain =
@@ -433,7 +434,7 @@ let
       postUnpack            = ''sourceRoot="$sourceRoot/utils/ghc-toolchain"'';
       libraryHaskellDepends = [base directory filepath ghc-platform process text transformers];
       description           = "Utility for managing GHC target toolchains";
-      license               = lib.licenses.bsd3;
+      license               = pkgs.lib.licenses.bsd3;
     };
 
   build-ghc = { base-ghc-to-override, build-pkgs, version, rev, sha256 }:
@@ -548,9 +549,9 @@ let
       noOverride  =
         builtins.hasAttr pkg-name old &&
         old."${pkg-name}" != null &&
-        lib.versionAtLeast old."${pkg-name}".version new-version;
+        pkgs.lib.versionAtLeast old."${pkg-name}".version new-version;
     in
-    lib.warnIf
+    pkgs.lib.warnIf
       noOverride
       "${pkg-name} >= ${new-version} is now in nixpkgs, the override is no longer needed"
       (if noOverride then old."${pkg-name}" else new-pkg);
