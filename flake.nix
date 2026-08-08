@@ -287,6 +287,23 @@
           ];
       };
 
+      checks = forEachSystem (
+        system:
+        let
+          pkgs    = nixpkgs.legacyPackages."${system}";
+          derived = self.lib.mk-haskell-tools {
+            inherit system;
+            vanilla-pkgs = pkgs;
+          };
+        in
+        {
+          default = pkgs.symlinkJoin {
+            name  = "check-haskell-nixpkgs-improvements-default";
+            paths = builtins.attrValues derived.tools ++ [derived.ghc.host.default];
+          };
+        }
+      );
+
       packages = forEachSystem (system:
         let
           # pkgs = import nixpkgs {
