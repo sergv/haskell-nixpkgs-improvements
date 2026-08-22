@@ -242,17 +242,23 @@ let
   # that only enable zlib. Locks also require regular maintenance, which is unbearable.
   bakedInNativeDeps = [ pkgs.zlib ];
 
+  pkg-config-path   =
+    builtins.concatStringsSep ":"
+      (builtins.concatMap (x: [(x + "/lib/pkgconfig") (x + "/share/pkgconfig")])
+        (builtins.filter (x: x != null)
+          (builtins.map (lib.getOutput "dev") bakedInNativeDeps)));
+
   wrap-cabal = pkg:
     pkgs.runCommand "wrapped-cabal"
       {
         # Will require at runtime both libraries and headers (development files) so we’re
         # taking both.
-        buildInputs       = pkgs.lib.lists.concatMap (x: if builtins.hasAttr "dev" x then [x x.dev] else [x]) bakedInNativeDeps;
+        buildInputs       = builtins.concatMap (x: if builtins.hasAttr "dev" x then [x x.dev] else [x]) bakedInNativeDeps;
         nativeBuildInputs = [ pkgs.makeWrapper ];
       }
       ''
         mkdir -p "$out/bin"
-        makeWrapper "${pkg}/bin/cabal" "$out/bin/cabal" --suffix "PKG_CONFIG_PATH" ":" "${pkgs.lib.makeSearchPathOutput "dev" "share/pkgconfig" bakedInNativeDeps}"
+        makeWrapper "${pkg}/bin/cabal" "$out/bin/cabal" --suffix "PKG_CONFIG_PATH" ":" "${pkg-config-path}"
       '';
 
   wrap-ghc-arch = old-arch-prefix: new-arch-prefix: old-version: new-version: alias-versions: pkg:
