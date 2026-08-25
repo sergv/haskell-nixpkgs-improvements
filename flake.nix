@@ -297,7 +297,7 @@
         {
           default = pkgs.symlinkJoin {
             name  = "check-haskell-nixpkgs-improvements-default";
-            paths = builtins.attrValues derived.tools ++ [derived.ghc.host.default];
+            paths = builtins.attrValues derived.tools ++ [derived.ghc.host.default derived.haskell-package-sets.host.ghc914-pie-debug.ghc];
           };
         }
       );

@@ -443,8 +443,16 @@ let
       license               = pkgs.lib.licenses.bsd3;
     };
 
-  build-ghc = { base-ghc-to-override, build-pkgs, version, rev, sha256 }:
-
+  build-ghc =
+    { base-ghc-to-override,
+      build-pkgs,
+      version,
+      rev,
+      sha256,
+      debug ? false,
+      relocatable-static-libs ? false,
+      docs ? true
+    }:
     let ghcSrc = pkgs.fetchgit {
           url = "https://gitlab.haskell.org/ghc/ghc.git";
           inherit rev sha256;
@@ -472,23 +480,18 @@ let
       enableProfiledLibs = !is-32-bits;
 
       enableShared = true;
-      enableRelocatedStaticLibs = false; #true;
+      enableRelocatedStaticLibs = relocatable-static-libs;
 
       ghcFlavour =
-        let hie_files =
-              if hutils.version-ge version "9.14"
-              then "+hie_files"
-              else "";
-            base =
-              if builtins.hasAttr "ghcFlavour" old
-              then old.ghcFlavour
-              else "release+split_sections";
+        let hie-files  = if hutils.version-ge version "9.14"  then "+hie_files"   else "";
+            debug-info = if debug                             then "+debug_info"  else "";
+            base       = if builtins.hasAttr "ghcFlavour" old then old.ghcFlavour else "release+split_sections";
         in
-        base + hie_files;
+        base + hie-files + debug-info;
 
       enableNativeBignum = true;
 
-      # enableDocs         = true; #false;
+      enableDocs         = docs; #false;
 
       bootPkgs = build-pkgs;
 
@@ -508,15 +511,17 @@ let
       postInstall =
         builtins.replaceStrings [ base-ghc-to-override.version ] [ "${version}" ] old.postInstall;
 
-      preConfigure = old.preConfigure +
-      # builtins.replaceStrings [ base-ghc-to-override.version ] [ "${version}" ] old.preConfigure +
+      dontStrip = debug;
 
-      # Do this if taking sources from git directly.
-      ''
-        echo ${version} > VERSION
-        echo ${rev} > GIT_COMMIT_ID
-        ./boot
-      '';
+      preConfigure = old.preConfigure +
+        # builtins.replaceStrings [ base-ghc-to-override.version ] [ "${version}" ] old.preConfigure +
+
+        # Do this if taking sources from git directly.
+        ''
+          echo ${version} > VERSION
+          echo ${rev} > GIT_COMMIT_ID
+          ./boot
+        '';
     }));
 
   cabal = wrap-cabal (hlib.justStaticExecutables hpkgsCabal.cabal-install);
@@ -526,21 +531,38 @@ let
 
   # ghc-build-pkgs = pkgs.haskell.packages.native-bignum.ghc9101;
   # ghc-build-pkgs = hpkgsCabal;
-  ghc-build-pkgs = hpkgs912;
-  latest-ghc-pkg = pkgs.haskell.compiler.native-bignum.9141;
+  # ghc-build-pkgs = hpkgs912;
+  ghc-build-pkgs = hutils.smaller-hpkgs-no-ghc pkgs.haskell.packages.native-bignum.ghc910;
+  latest-ghc-pkg = pkgs.haskell.compiler.native-bignum.ghc9141;
 
   ghc912-pkg = pkgs.haskell.compiler.native-bignum.ghc9124;
 
-  ghc914-pkg = pkgs.haskell.compiler.native-bignum.ghc9141;
+  ghc914-pkg           = pkgs.haskell.compiler.native-bignum.ghc9141;
+  ghc914-pie-pkg       = mk-relocatable-static-libs-ghc ghc914-pkg;
+  ghc914-pie-debug-pkg = build-dev-ghc {
+    debug                   = true;
+    relocatable-static-libs = true;
+    docs                    = false;
+  };
 
   dev-ghc-version = "9.14.1";
   dev-ghc-short-version = "9.14";
-  dev-ghc-pkg = build-ghc {
-    base-ghc-to-override = latest-ghc-pkg;
-    build-pkgs           = ghc-build-pkgs;
-    version              = "9.14.1";
-    rev                  = "902339d332fb4ce2b3c87dcac1ee6495d41ad886";
-    sha256               = pkgs.lib.fakeSha256;
+  build-dev-ghc =
+    cfg:
+    build-ghc
+      ({
+        base-ghc-to-override    = latest-ghc-pkg;
+        build-pkgs              = ghc-build-pkgs;
+        version                 = "9.14.1";
+        rev                     = "902339d332fb4ce2b3c87dcac1ee6495d41ad886";
+        sha256                  = "sha256-wsClYVCoinEem20jHTFjiTOMgU8MsEaZ1RAgAMsK078="; #pkgs.lib.fakeSha256;
+      } //
+      cfg);
+
+  dev-ghc-pkg = build-dev-ghc {
+    debug                   = false;
+    relocatable-static-libs = false;
+    docs                    = false;
   };
 
   # Caused by process 1.6.30 tha conflicts with boot library but
@@ -716,9 +738,10 @@ let
 
     in {
       host = rec {
-        default    = ghc914;
-        ghc914     = mkGhc914Pkgs ghc914-pkg;
-        ghc914-pie = mkGhc914Pkgs (mk-relocatable-static-libs-ghc ghc914-pkg);
+        default          = ghc914;
+        ghc914           = mkGhc914Pkgs ghc914-pkg;
+        ghc914-pie       = mkGhc914Pkgs ghc914-pie-pkg;
+        ghc914-pie-debug = mkGhc914Pkgs ghc914-pie-debug-pkg;
       };
     };
 
