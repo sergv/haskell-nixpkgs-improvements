@@ -451,7 +451,10 @@ let
       sha256,
       debug ? false,
       relocatable-static-libs ? false,
-      docs ? true
+      docs ? true,
+      hie-files ? false,
+      profiling ? false,
+      llvm ? false
     }:
     let ghcSrc = pkgs.fetchgit {
           url = "https://gitlab.haskell.org/ghc/ghc.git";
@@ -471,23 +474,42 @@ let
         ghc-platform-pkg  = callPackage' ghc-platform {};
         ghc-toolchain-pkg = callPackage' ghc-toolchain { ghc-platform = ghc-platform-pkg; };
 
+        enableProfiling = profiling && !is-32-bits;
     in
     disableAllHardening ((ghc'.override (old: old // {
       # stdenv             = pkgs.llvmPackages.stdenv;
 
       # Need to disable for 32 bit builds, otherwise some big files within cannot be
       # compiled due to ld.gold exhausting memory.
-      enableProfiledLibs = !is-32-bits;
+      enableProfiledLibs = enableProfiling;
 
       enableShared = true;
       enableRelocatedStaticLibs = relocatable-static-libs;
 
       ghcFlavour =
-        let hie-files  = if hutils.version-ge version "9.14"  then "+hie_files"   else "";
-            debug-info = if debug                             then "+debug_info"  else "";
-            base       = if builtins.hasAttr "ghcFlavour" old then old.ghcFlavour else "release+split_sections";
+        let
+          hie-files-flavour =
+            if hie-files && hutils.version-ge version "9.14"
+            then "+hie_files"
+            else "";
+          debug-info =
+            if debug
+            then "+debug_info"
+            else "";
+          profiling-flavour =
+            if enableProfiling
+            then ""
+            else "+no_profiled_libs";
+          llvm-flavour =
+            if llvm
+            then "+llvm"
+            else "";
+          base       =
+            if builtins.hasAttr "ghcFlavour" old
+            then old.ghcFlavour
+            else "release+split_sections";
         in
-        base + hie-files + debug-info;
+        base + hie-files-flavour + debug-info + profiling-flavour + llvm-flavour;
 
       enableNativeBignum = true;
 
