@@ -537,9 +537,26 @@ let
 
   ghc912-pkg = pkgs.haskell.compiler.native-bignum.ghc9124;
 
+  build-914-ghc =
+    cfg:
+    build-ghc
+      ({
+        base-ghc-to-override    = latest-ghc-pkg;
+        build-pkgs              = ghc-build-pkgs;
+        version                 = "9.14.1";
+        rev                     = "902339d332fb4ce2b3c87dcac1ee6495d41ad886";
+        sha256                  = "sha256-wsClYVCoinEem20jHTFjiTOMgU8MsEaZ1RAgAMsK078="; #pkgs.lib.fakeSha256;
+      } //
+      cfg);
+
+
   ghc914-pkg           = pkgs.haskell.compiler.native-bignum.ghc9141;
-  ghc914-pie-pkg       = mk-relocatable-static-libs-ghc ghc914-pkg;
-  ghc914-pie-debug-pkg = build-dev-ghc {
+  ghc914-pie-pkg       = build-914-ghc {
+    debug                   = false;
+    relocatable-static-libs = true;
+    docs                    = false;
+  };
+  ghc914-pie-debug-pkg = build-914-ghc {
     debug                   = true;
     relocatable-static-libs = true;
     docs                    = false;
@@ -738,7 +755,10 @@ let
 
     in {
       host = rec {
-        default          = ghc914;
+        default           = ghc914;
+        default-pie       = ghc914-pie;
+        default-pie-debug = ghc914-pie-debug;
+
         ghc914           = mkGhc914Pkgs ghc914-pkg;
         ghc914-pie       = mkGhc914Pkgs ghc914-pie-pkg;
         ghc914-pie-debug = mkGhc914Pkgs ghc914-pie-debug-pkg;
