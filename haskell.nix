@@ -546,7 +546,7 @@ let
         '';
     }));
 
-  cabal = wrap-cabal (hlib.justStaticExecutables hpkgsCabal.cabal-install);
+  cabal = wrap-cabal (allowGhcReference (hlib.justStaticExecutables hpkgsCabal.cabal-install));
 
   latest-ghc-field         = "ghc9124";
   latest-ghc-short-version = "9.12";
