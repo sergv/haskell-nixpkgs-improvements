@@ -869,7 +869,7 @@ in {
     eventlog2html      = hlib.justStaticExecutables haskell-package-sets.host.default.eventlog2html;
     fast-tags          = hlib.justStaticExecutables haskell-package-sets.host.default.fast-tags;
     faster-richer-tags = hlib.justStaticExecutables haskell-package-sets.host.default.faster-richer-tags;
-    ghc-events-analyze = hlib.justStaticExecutables hpkgsGhcEventsAnalyze.ghc-events-analyze;
+    ghc-events-analyze = allowGhcReference (hlib.justStaticExecutables hpkgsGhcEventsAnalyze.ghc-events-analyze);
     hp2pretty          = hlib.justStaticExecutables haskell-package-sets.host.default.hp2pretty;
     pretty-show        = hlib.justStaticExecutables haskell-package-sets.host.default.pretty-show;
     profiterole        = hlib.justStaticExecutables haskell-package-sets.host.default.profiterole;
