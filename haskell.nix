@@ -13,8 +13,8 @@ let
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
-    rev    = "ebd0f9435b3b2576c8ce620bcc0eefec82645598"; #"dev";
-    sha256 = "sha256-dBTcZVrgvjtCMrdTG848XNWZZqj/dpkWuU8TX5tLXuU="; #pkgs.lib.fakeSha256;
+    rev    = "d301de7a1bad90481fe4447a97c4605475ca1d1f"; #"dev";
+    sha256 = "sha256-lSdPPeSN9wOJFM+o3ybDePiCNcv0NDHJYMs5i6BHXOE="; #pkgs.lib.fakeSha256;
   };
 
   doctest-repo = pkgs.fetchFromGitHub {
@@ -164,14 +164,14 @@ let
     # uuid-types = hlib.doJailbreak old.uuid-types;
     # strict = hlib.doJailbreak old.strict;
 
-    semaphore-compat = hlib.dontCheck
-      (old.callHackageDirect
-        {
-          pkg    = "semaphore-compat";
-          ver    = "2.0.0";
-          sha256 = "sha256-s7SAtaEFR+QJ9ZeWn/0k/qq5PgwU1BsiSu/HUoDrQBo="; #pkgs.lib.fakeSha256;
-        }
-        {});
+    # semaphore-compat = hlib.dontCheck
+    #   (old.callHackageDirect
+    #     {
+    #       pkg    = "semaphore-compat";
+    #       ver    = "2.0.1";
+    #       sha256 = "sha256-171llLfOrmKQ27CLUSWEBLl5c8A+gwSEs7aGV+R6oH4="; #pkgs.lib.fakeSha256;
+    #     }
+    #     {});
 
     # unix = hlib.dontCheck
     #   (old.callHackageDirect
