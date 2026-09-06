@@ -213,6 +213,15 @@
 
         mk-haskell-utils = pkgs: mkHUtils pkgs;
 
+        prepare-haskell-tools-pkgs = { pkgs-pristine, pkgs, overlays }:
+          let
+            use-vanilla-cabal2nix-overlay = new: old: {
+              cabal2nix           = pkgs-pristine.cabal2nix;
+              cabal2nix-unwrapped = pkgs-pristine.cabal2nix-unwrapped;
+            };
+          in
+          pkgs.appendOverlays (overlays ++ [ use-vanilla-cabal2nix-overlay ]);
+
         # Expects to receive packages with corresponding overlays in this flake applied.
         # Other overlays may be applied as well.
         mk-haskell-tools =
