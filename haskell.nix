@@ -96,11 +96,15 @@ let
     Cabal-described = old.callCabal2nix
       "Cabal-described"
       (cabal-repo + "/Cabal-described")
-      {};
+      {
+        inherit (new) Cabal Cabal-syntax;
+      };
     Cabal-hooks = old.callCabal2nix
       "Cabal-hooks"
       (cabal-repo + "/Cabal-hooks")
-      {};
+      {
+        inherit (new) Cabal Cabal-syntax;
+      };
     Cabal-syntax = old.callCabal2nix
       "Cabal-syntax"
       (cabal-repo + "/Cabal-syntax")
@@ -108,12 +112,28 @@ let
     Cabal-tests = old.callCabal2nix
       "Cabal-tests"
       (cabal-repo + "/Cabal-tests")
-      {};
+      {
+        inherit (new) Cabal Cabal-described Cabal-syntax Cabal-QuickCheck;
+      };
+    Cabal-QuickCheck = old.callCabal2nix
+      "Cabal-QuickCheck"
+      (cabal-repo + "/Cabal-QuickCheck")
+      {
+        inherit (new) Cabal Cabal-syntax;
+      };
+    Cabal-tree-diff = old.callCabal2nix
+      "Cabal-tree-diff"
+      (cabal-repo + "/Cabal-tree-diff")
+      {
+        inherit (new) Cabal Cabal-syntax;
+      };
     cabal-install-solver = # hlib.doJailbreak
       (old.callCabal2nix
         "cabal-install-solver"
         (cabal-repo + "/cabal-install-solver")
-        {});
+        {
+          inherit (new) Cabal Cabal-syntax;
+        });
     hooks-exe = # hlib.doJailbreak
       (old.callCabal2nix
         "hooks-exe"
@@ -122,26 +142,49 @@ let
     # hlib.dontCheck
     # (old.callHackage "cabal-install-solver" "3.8.1.0" {});
     cabal-install = # hlib.doJailbreak
-      (old.callCabal2nix
-        "cabal-install"
-        (cabal-repo + "/cabal-install")
-        { inherit (new) Cabal-described Cabal-QuickCheck Cabal-tree-diff Cabal-tests;
-        });
+      # process-on-914-workaround
+      hlib.dontJailbreak
+        (old.callCabal2nix
+          "cabal-install"
+          (cabal-repo + "/cabal-install")
+          {
+            inherit (new) Cabal Cabal-described Cabal-QuickCheck Cabal-tree-diff Cabal-tests Cabal-syntax;
+          });
+
+    # hackage-security = process-on-914-workaround
+    #   (hlib.compose.appendConfigureFlags
+    #     ["--constraint=Cabal>=3.18"]
+    #     (old.hackage-security.override (_: {
+    #       inherit (new) Cabal Cabal-syntax;
+    #     })));
+    # # hackage-security =
+    #   # # hlib.doJailbreak
+    #   # #   (old.callHackage "hackage-security" "0.6.3.1" {});
+    #   # warn-on-stale-override old
+    #   #   (process-on-914-workaround
+    #   #     (overrideCabal
+    #   #       "1"
+    #   #       "sha256-5yidF8pwnRrPubtDQC68/mwSbv+eC9omvrPGh9isJuo=" #pkgs.lib.fakeSha256
+    #   #       (old.callHackageDirect
+    #   #         {
+    #   #           pkg    = "hackage-security";
+    #   #           ver    = "0.6.3.1";
+    #   #           sha256 = "sha256-pbU35af2jqFhAtKDtkFRt4jY4m+BU5rpG1shr8qZiaQ="; #pkgs.lib.fakeSha256;
+    #   #         }
+    #   #         {})));
 
     hackage-security =
-      # hlib.doJailbreak
-      #   (old.callHackage "hackage-security" "0.6.3.1" {});
-      # hlib.doJailbreak
-      (overrideCabal
-        "1"
-        "sha256-5yidF8pwnRrPubtDQC68/mwSbv+eC9omvrPGh9isJuo=" #pkgs.lib.fakeSha256
-        (old.callHackageDirect
-          {
-            pkg    = "hackage-security";
-            ver    = "0.6.3.1";
-            sha256 = "sha256-pbU35af2jqFhAtKDtkFRt4jY4m+BU5rpG1shr8qZiaQ="; #pkgs.lib.fakeSha256;
-          }
-          {}));
+      warn-on-stale-override old
+        (process-on-914-workaround
+          (old.callHackageDirect
+            {
+              pkg    = "hackage-security";
+              ver    = "0.6.4.0";
+              sha256 = "sha256-DDFRWtJHElmz3sPF1VLbIqqCCe921biZTH701GwG4r8="; #pkgs.lib.fakeSha256;
+            }
+            {
+              inherit (new) Cabal Cabal-syntax;
+            }));
 
     # semaphore-compat = hlib.markUnbroken old.semaphore-compat;
 
@@ -164,14 +207,14 @@ let
     # uuid-types = hlib.doJailbreak old.uuid-types;
     # strict = hlib.doJailbreak old.strict;
 
-    # semaphore-compat = hlib.dontCheck
-    #   (old.callHackageDirect
-    #     {
-    #       pkg    = "semaphore-compat";
-    #       ver    = "2.0.1";
-    #       sha256 = "sha256-171llLfOrmKQ27CLUSWEBLl5c8A+gwSEs7aGV+R6oH4="; #pkgs.lib.fakeSha256;
-    #     }
-    #     {});
+    semaphore-compat = hlib.dontCheck
+      (old.callHackageDirect
+        {
+          pkg    = "semaphore-compat";
+          ver    = "2.0.1";
+          sha256 = "sha256-171llLfOrmKQ27CLUSWEBLl5c8A+gwSEs7aGV+R6oH4="; #pkgs.lib.fakeSha256;
+        }
+        {});
 
     # unix = hlib.dontCheck
     #   (old.callHackageDirect
