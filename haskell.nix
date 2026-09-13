@@ -13,8 +13,8 @@ let
   cabal-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "cabal";
-    rev    = "d301de7a1bad90481fe4447a97c4605475ca1d1f"; #"dev";
-    sha256 = "sha256-lSdPPeSN9wOJFM+o3ybDePiCNcv0NDHJYMs5i6BHXOE="; #pkgs.lib.fakeSha256;
+    rev    = "d523c60434ff2b6c827f2fb4e52e04a6edb7cd01"; #"dev";
+    sha256 = "sha256-u9KRRblhQk1Y709c5RtbarOk9Uy+HN5/R2bWCLgznHU="; #pkgs.lib.fakeSha256;
   };
 
   doctest-repo = pkgs.fetchFromGitHub {
@@ -34,8 +34,8 @@ let
   faster-richer-tags-repo = pkgs.fetchFromGitHub {
     owner  = "sergv";
     repo   = "faster-richer-tags";
-    rev    = "b0b1e3c007781d640e30b8c709bdb487d69c0a51";
-    sha256 = "sha256-cG9f8I7ipALIwoa5xSJjREkPZv9oIdSr+vn568li3Xc="; #pkgs.lib.fakeSha256;
+    rev    = "af5b426e5c53377a46bf16da3efad1cf94e2199b";
+    sha256 = "sha256-7/V7L+o0RcXPOk0WgNM3WsuSj+0sVcWp8HDqS6oInRg="; #pkgs.lib.fakeSha256;
   };
 
   eventlog2html-repo = pkgs.fetchFromGitHub {
