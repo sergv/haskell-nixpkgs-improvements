@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs = {
-      url = "nixpkgs";
+      url = "flake:nixpkgs";
     };
 
     nixpkgs-unstable = {
