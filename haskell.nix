@@ -287,7 +287,7 @@ let
 
   pkg-config-path   =
     builtins.concatStringsSep ":"
-      (builtins.concatMap (x: [(x + "/lib/pkgconfig") (x + "/share/pkgconfig")])
+      (builtins.concatMap (x: builtins.filter (y: builtins.pathExists y) [(x + "/lib/pkgconfig") (x + "/share/pkgconfig")])
         (builtins.filter (x: x != null)
           (builtins.map (lib.getOutput "dev") bakedInNativeDeps)));
 
